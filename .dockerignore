@@ -1,0 +1,23 @@
+# Maven build output
+target/
+*.jar
+*.war
+
+# Git & CI metadata
+.git
+.github
+.gitignore
+
+# Documentation & IDE files
+README.md
+CONTRIBUTING.md
+LICENSE
+.idea
+.vscode
+*.iml
+
+# Secrets & Environment files (Security by Default)
+.env
+*.env
+!.env.example
+*.log
