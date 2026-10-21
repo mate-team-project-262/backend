@@ -23,6 +23,22 @@ Requires Java 21, Maven 3.6.3+ and Docker Compose. The application uses Spring B
    automatically; Spring Boot does not.
 4. Run `mvn spring-boot:run`. The HTTP server listens on port 8080.
 
+### Run Full Stack with Docker Compose (MySQL + App)
+To run both MySQL and the containerized Backend service together:
+```bash
+# 1. Ensure .env exists with required credentials
+cp -n .env.example .env
+
+# 2. Build and start both services
+docker compose --profile app up -d --build
+
+# 3. View backend logs
+docker compose logs -f backend
+
+# 4. Stop containers
+docker compose --profile app down
+```
+
 Spring Security protects requests using its default configuration until application
 authentication is implemented. Liquibase owns schema changes; add migrations to
 `src/main/resources/db/changelog/db.changelog-master.yaml`. Hibernate validates
