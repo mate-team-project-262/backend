@@ -1,0 +1,2 @@
+# Add versioned changesets here as the domain schema is introduced.
+databaseChangeLog: []
