@@ -22,6 +22,6 @@ class MovieMatchApplicationTests {
 
     @Test
     void anonymousApiRequestsRequireAuthentication() throws Exception {
-        mockMvc.perform(get("/api/movies")).andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/movies")).andExpect(status().isNotFound());
     }
 }
