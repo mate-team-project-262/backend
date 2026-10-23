@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   verify-and-build-docker:
-    name: Maven Verify (MySQL Integration Tests) & Docker Build
+    name: Maven Verify (H2 Smoke Test) & Docker Build
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -30,7 +30,7 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: 3. Run Maven verify (Context, JPA & Liquibase MySQL tests)
+      - name: 3. Run Maven verify (Context, Security & Liquibase H2 tests)
         run: mvn clean verify -B
 
       - name: 4. Verify production Docker image build
