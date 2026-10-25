@@ -10,6 +10,5 @@ import java.util.List;
 public record PreferencesRequest(
         @NotNull ContentType contentType,
         @Size(max = 5) List<@NotNull Integer> genreIds,
-        @Min(30) @Max(300) Integer maxDurationMinutes,
-        @Size(max = 5) List<@NotNull Integer> streamingServiceIds) {
+        @Min(30) @Max(300) Integer maxDurationMinutes) {
 }
