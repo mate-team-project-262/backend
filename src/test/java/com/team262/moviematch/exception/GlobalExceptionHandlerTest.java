@@ -121,7 +121,7 @@ class GlobalExceptionHandlerTest {
         ResponseEntity<ErrorResponse> response =
                 handler.handleForbiddenException(exception);
 
-        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
 
         ErrorResponse body = response.getBody();
         assertNotNull(body);

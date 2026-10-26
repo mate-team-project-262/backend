@@ -5,7 +5,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class RoomCodeGenerator {
-    private static final char[] charArray = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789".toCharArray();
+    private static final char[] charArray = "ABCDEFGHJKMNPQRSTUVWXYZ23456789".toCharArray();
     private static final int LENGTH = 6;
 
     public String generateCode() {

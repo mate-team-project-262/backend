@@ -69,7 +69,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ForbiddenException.class)
     public ResponseEntity<ErrorResponse> handleForbiddenException(ForbiddenException e) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(buildErrorResponse(
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(buildErrorResponse(
                 e.getCode().name(),
                 e.getMessage(),
                 List.of()
