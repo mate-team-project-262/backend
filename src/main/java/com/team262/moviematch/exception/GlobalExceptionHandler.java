@@ -6,6 +6,7 @@ import com.team262.moviematch.exception.ex.BadRequestException;
 import com.team262.moviematch.exception.ex.ConflictException;
 import com.team262.moviematch.exception.ex.ForbiddenException;
 import com.team262.moviematch.exception.ex.NotFoundException;
+import com.team262.moviematch.exception.ex.UnauthorizedException;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -68,6 +69,15 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ForbiddenException.class)
     public ResponseEntity<ErrorResponse> handleForbiddenException(ForbiddenException e) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(buildErrorResponse(
+                e.getCode().name(),
+                e.getMessage(),
+                List.of()
+        ));
+    }
+
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<ErrorResponse> handeUnauthorizedException(UnauthorizedException e) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(buildErrorResponse(
                 e.getCode().name(),
                 e.getMessage(),

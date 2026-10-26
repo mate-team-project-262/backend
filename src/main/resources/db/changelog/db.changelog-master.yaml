@@ -2,3 +2,6 @@ databaseChangeLog:
   - include:
       file: 001-rooms-participants.yaml
       relativeToChangelogFile: true
+  - include:
+      file: 002-participant-tokens.yaml
+      relativeToChangelogFile: true

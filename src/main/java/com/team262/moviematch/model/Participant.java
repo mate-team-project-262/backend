@@ -9,6 +9,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.time.LocalDateTime;
 import org.hibernate.proxy.HibernateProxy;
 
 @Entity
@@ -28,13 +29,22 @@ public class Participant {
     @Column(name = "is_host", nullable = false)
     private boolean host;
 
+    @Column(nullable = false, unique = true, length = 36)
+    private String token;
+
+    @Column(name = "token_created_at", nullable = false)
+    private LocalDateTime tokenCreatedAt;
+
     protected Participant() {
     }
 
-    public Participant(Room room, String name, boolean host) {
+    public Participant(Room room, String name, boolean host, String token,
+                       LocalDateTime tokenCreatedAt) {
         this.room = room;
         this.name = name;
         this.host = host;
+        this.token = token;
+        this.tokenCreatedAt = tokenCreatedAt;
     }
 
     public Long getId() {
@@ -63,6 +73,22 @@ public class Participant {
 
     public void setHost(boolean host) {
         this.host = host;
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
+    }
+
+    public LocalDateTime getTokenCreatedAt() {
+        return tokenCreatedAt;
+    }
+
+    public void setTokenCreatedAt(LocalDateTime tokenCreatedAt) {
+        this.tokenCreatedAt = tokenCreatedAt;
     }
 
     @Override
