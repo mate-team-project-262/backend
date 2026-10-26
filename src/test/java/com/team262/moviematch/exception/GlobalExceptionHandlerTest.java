@@ -1,7 +1,7 @@
 package com.team262.moviematch.exception;
 
-import com.team262.moviematch.dto.ErrorResponse;
-import com.team262.moviematch.dto.FieldErrorResponse;
+import com.team262.moviematch.dto.error.ErrorResponse;
+import com.team262.moviematch.dto.error.FieldErrorResponse;
 import com.team262.moviematch.exception.ex.BadRequestException;
 import com.team262.moviematch.exception.ex.ConflictException;
 import com.team262.moviematch.exception.ex.ForbiddenException;
