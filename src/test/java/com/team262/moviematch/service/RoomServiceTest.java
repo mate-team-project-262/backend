@@ -21,6 +21,7 @@ import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mapstruct.factory.Mappers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -54,7 +55,7 @@ class RoomServiceTest {
     @BeforeEach
     void setUp() {
         service = new RoomServiceImpl(rooms, participants, tokens, codes,
-                new RoomMapper(), transactions, 5);
+                Mappers.getMapper(RoomMapper.class), transactions, 5);
     }
 
     @Test
@@ -84,7 +85,7 @@ class RoomServiceTest {
 
     @Test
     void mapsSuppliedPreferencesWithoutSharingGenreSet() {
-        RoomMapper mapper = new RoomMapper();
+        RoomMapper mapper = Mappers.getMapper(RoomMapper.class);
         var request = new CreateRoomRequest("Host",
                 new PreferencesRequest(ContentType.TV_SERIES, Set.of(28, 35), 120));
         Room room = mapper.toRoom("K7M2QX", request);

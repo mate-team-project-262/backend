@@ -93,6 +93,13 @@ Run the service checks without Docker with `mvn -Dtest=RoomServiceTest test`.
 The standalone HTTP checks run with `mvn -Dtest=RoomControllerTest test` and cover
 the existing DTO contract, request validation and participant token resolution.
 
+`RoomMapper` uses MapStruct 1.6.3 with the Spring component model. Maven generates
+its implementation during compilation; generated sources stay under `target/`.
+The annotation processor configuration includes Lombok and `lombok-mapstruct-binding`.
+Room construction retains model defaults, and response genres and participant
+lists remain immutable snapshots. Mapper regression tests run with
+`mvn -Dtest=RoomMapperTest test`.
+
 ## Sprint 1 data model
 
 The initial schema is in `001-rooms-participants.yaml`, included from the master
