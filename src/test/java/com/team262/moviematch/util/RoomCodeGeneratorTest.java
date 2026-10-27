@@ -14,7 +14,7 @@ class RoomCodeGeneratorTest {
             new RoomCodeGenerator();
 
     private static final Set<Character> ALLOWED_CHARACTERS =
-            "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+            "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
                     .chars()
                     .mapToObj(c -> (char) c)
                     .collect(Collectors.toSet());
@@ -40,7 +40,7 @@ class RoomCodeGeneratorTest {
     @Test
     void shouldNeverGenerateExcludedCharacters() {
         Set<Character> excludedCharacters =
-                Set.of('O', '0', 'I', 'l', '1');
+                Set.of('O', '0', 'I', 'L', 'l', '1');
         IntStream.range(0, 1000).forEach(i -> {
             String code = roomCodeGenerator.generateCode();
             assertTrue(

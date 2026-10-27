@@ -39,8 +39,8 @@ docker compose logs -f backend
 docker compose --profile app down
 ```
 
-The current Spring Security configuration permits requests; authentication is
-deferred to a later task. Liquibase owns schema changes; add migrations to
+The current Spring Security filter permits requests; room lobby authentication
+uses `X-Participant-Token` through `@CurrentParticipant`. Liquibase owns schema changes; add migrations to
 `src/main/resources/db/changelog/db.changelog-master.yaml`. Hibernate validates
 the schema without creating tables.
 
@@ -55,6 +55,50 @@ Run only the persistence tests with `mvn -Dtest=RoomPersistenceTests test`.
 They cover initial/repeated migration, persisted preferences and statuses,
 case-insensitive code lookup, lazy participant relationships, MySQL constraints,
 database cascade deletion and identity methods with Hibernate proxies.
+
+## Room creation and lobby
+
+`POST /rooms` accepts the existing `CreateRoomRequest`: `displayName` (3–20
+characters, not blank) and optional `preferences`. It returns `201 Created`, a
+`Location: /rooms/{code}` header and `CreateRoomResponse`. The host and its token
+remain in the `participant` field. Missing or null preferences retain the model's
+`MOVIES` default, empty genres and no duration limit. A supplied preferences
+object requires `contentType`; missing or null `genreIds` become an empty set.
+
+Room creation, host persistence and token issuance commit together. Only a room
+code unique constraint violation triggers a retry, with a fresh transaction for
+each of at most five attempts. Exhaustion returns `503 Service Unavailable` so the
+caller can retry; other persistence failures propagate without collision retries.
+
+`GET /rooms/{code}` requires `X-Participant-Token` for a participant in that room.
+It returns `RoomDetailsResponse` with current status, preferences, participant
+count, configured `maxParticipants` and participants ordered by ID. The shared
+participant list contains only ID, display name and host flag. Tokens are never
+included. The temporary limit is **5**, configurable with `ROOM_MAX_PARTICIPANTS`
+(`room.max-participants`); enforcing the limit belongs to the separate join task.
+
+Validation failures return `400`; missing, unknown or expired tokens return
+`401 INVALID_TOKEN`; a valid token belonging to another room returns
+`403 WRONG_ROOM`; an unknown room with a valid token returns `404 ROOM_NOT_FOUND`.
+`ForbiddenException` now maps to `403` instead of the previous incorrect `401`.
+DTO fields and request validation constraints are unchanged. Random film
+selection and joining a room are outside this implementation.
+
+DTO PRs #11/#13 and token resolver/service PR #12 are already merged into the
+`develop` base (`ed7fe66`); there are no remaining dependencies on those PRs.
+
+Run the API, transaction and authorization checks on MySQL with
+`mvn -Dtest=RoomControllerIntegrationTest test` (Docker required).
+Run the service checks without Docker with `mvn -Dtest=RoomServiceTest test`.
+The standalone HTTP checks run with `mvn -Dtest=RoomControllerTest test` and cover
+the existing DTO contract, request validation and participant token resolution.
+
+`RoomMapper` uses MapStruct 1.6.3 with the Spring component model. Maven generates
+its implementation during compilation; generated sources stay under `target/`.
+The annotation processor configuration includes Lombok and `lombok-mapstruct-binding`.
+Room construction retains model defaults, and response genres and participant
+lists remain immutable snapshots. Mapper regression tests run with
+`mvn -Dtest=RoomMapperTest test`.
 
 ## Sprint 1 data model
 
@@ -83,16 +127,15 @@ already indexes `room_id`.
 
 Participants are guests belonging to one room. Different guests can have the same
 name. Account links (`user_id`) are deferred until a later migration introduces
-users. The future join/session service must identify returning guests using a
-validated participant credential, assign the creator as host and ensure only one
-host per room. This schema stores the host flag without enforcing host count.
+users. Room creation assigns the creator as host. The future join service must
+identify returning guests using a validated participant token and preserve the
+single host. This schema stores the host flag without enforcing host count.
 Entity IDs and invitation codes alone do not implement authentication.
 
 Deleting a room cascades to its participants and genres in MySQL, including when
 deleted using SQL. No JPA entity cascade or orphan removal is configured.
-Authentication, code generation, the five-person room limit and scheduled
-24-hour cleanup belong to later service tasks; this change only supplies their
-data model. Streaming services, accounts and swipe history are outside this
-migration.
+The five-person room limit enforcement and scheduled 24-hour cleanup belong to
+later service tasks. Streaming services, accounts and swipe history are outside
+this migration.
 
 Never commit `.env` files or real credentials. `.env.example` contains placeholders only.
