@@ -19,6 +19,11 @@ public class ParticipantTokenServiceImpl implements ParticipantTokenService {
     private static final long TOKEN_VALIDITY_HOURS = 24;
 
     @Override
+    public String generateToken() {
+        return UUID.randomUUID().toString();
+    }
+
+    @Override
     @Transactional
     public String issueToken(Participant participant) {
         String token = UUID.randomUUID().toString();
