@@ -62,7 +62,7 @@ After starting the backend, open [Swagger UI](http://localhost:8080/swagger-ui/i
 The generated contracts are available as [OpenAPI JSON](http://localhost:8080/v3/api-docs)
 and [OpenAPI YAML](http://localhost:8080/v3/api-docs.yaml).
 
-All three Sprint 1 operations include Russian descriptions, request/response
+All three Sprint 1 operations include English descriptions, request/response
 examples, DTO constraints and operation-specific HTTP errors. For GET lobby,
 click **Authorize** and paste the participant token without `Bearer`.
 Create and join do not require authorization. Their token fields differ:

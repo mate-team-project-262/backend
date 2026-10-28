@@ -6,8 +6,8 @@ import jakarta.validation.constraints.Size;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 public record CreateRoomRequest(
-        @Schema(description = "Имя хоста: не пустое, 3–20 символов", example = "Anna", requiredMode = Schema.RequiredMode.REQUIRED)
+        @Schema(description = "Host display name: non-blank, 3-20 characters", example = "Anna", requiredMode = Schema.RequiredMode.REQUIRED)
         @NotBlank @Size(min = 3, max = 20) String displayName,
-        @Schema(description = "Настройки. Если отсутствуют или null: MOVIES, пустые жанры и длительность null.", nullable = true)
+        @Schema(description = "Preferences. If omitted or null: MOVIES, an empty genre set and a null duration limit.", nullable = true)
         @Valid PreferencesRequest preferences) {
 }

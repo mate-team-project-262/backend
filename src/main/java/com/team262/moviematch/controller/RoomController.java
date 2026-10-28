@@ -37,40 +37,40 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/rooms")
 @RequiredArgsConstructor
-@Tag(name = "Rooms", description = "Создание комнаты, присоединение и получение лобби")
+@Tag(name = "Rooms", description = "Room creation, joining and lobby retrieval")
 public class RoomController {
     private final RoomService roomService;
 
     @PostMapping
-    @Operation(operationId = "createRoom", summary = "Создать комнату и стать хостом",
-            description = "Токен не требуется. Комната создаётся в статусе LOBBY. "
-                    + "preferences можно не передавать или передать null: используются MOVIES, пустые жанры "
-                    + "и отсутствие ограничения длительности. Сохраните participant.token для GET лобби. "
-                    + "Ссылку приглашения фронтенд формирует из code самостоятельно.",
+    @Operation(operationId = "createRoom", summary = "Create a room and become its host",
+            description = "No token is required. The room is created in LOBBY status. "
+                    + "Omit preferences or send null to use MOVIES, an empty genre set "
+                    + "and no duration limit. Save participant.token for GET lobby. "
+                    + "The frontend builds the invitation link from code.",
             responses = {
-                @ApiResponse(responseCode = "201", description = "Комната и хост созданы",
-                        headers = @Header(name = "Location", description = "Адрес лобби; для GET потребуется токен",
+                @ApiResponse(responseCode = "201", description = "Room and host created",
+                        headers = @Header(name = "Location", description = "Lobby URL; GET requires a participant token",
                                 schema = @Schema(type = "string", example = "/rooms/K7M2QX")),
                         content = @Content(mediaType = "application/json",
                                 schema = @Schema(implementation = CreateRoomResponse.class), examples = {
-                                    @ExampleObject(name = "С предпочтениями", value = RoomApiExamples.CREATE_RESPONSE),
-                                    @ExampleObject(name = "По умолчанию", value = RoomApiExamples.DEFAULT_RESPONSE)})),
-                @ApiResponse(responseCode = "400", description = "VALIDATION_ERROR: неверное имя или настройки. "
-                        + "Некорректный JSON, неизвестный contentType, отсутствующее тело или неверный тип поля "
-                        + "также дают 400, но в стандартном формате Spring без code.",
+                                    @ExampleObject(name = "With preferences", value = RoomApiExamples.CREATE_RESPONSE),
+                                    @ExampleObject(name = "Default preferences", value = RoomApiExamples.DEFAULT_RESPONSE)})),
+                @ApiResponse(responseCode = "400", description = "VALIDATION_ERROR: invalid display name or preferences. "
+                        + "Malformed JSON, an unknown contentType, a missing body or an invalid field type "
+                        + "also return 400, using Spring's default format without code.",
                         content = @Content(mediaType = "application/json",
                                 schema = @Schema(oneOf = {ErrorResponse.class, FrameworkErrorResponse.class}), examples = {
-                                    @ExampleObject(name = "Валидация", value = RoomApiExamples.VALIDATION_ERROR),
-                                    @ExampleObject(name = "Ошибка JSON", value = RoomApiExamples.BAD_JSON)})),
-                @ApiResponse(responseCode = "415", description = "Неподдерживаемый Content-Type; отправляйте application/json",
+                                    @ExampleObject(name = "Validation error", value = RoomApiExamples.VALIDATION_ERROR),
+                                    @ExampleObject(name = "JSON error", value = RoomApiExamples.BAD_JSON)})),
+                @ApiResponse(responseCode = "415", description = "Unsupported Content-Type; send application/json",
                         content = @Content(mediaType = "application/json",
                                 schema = @Schema(implementation = FrameworkErrorResponse.class))),
-                @ApiResponse(responseCode = "503", description = "Не удалось выделить уникальный код за 5 попыток. "
-                        + "Можно повторить создание; поле code ошибки не предусмотрено.",
+                @ApiResponse(responseCode = "503", description = "Failed to allocate a unique room code after 5 attempts. "
+                        + "Creation can be retried; no business error code is provided.",
                         content = @Content(mediaType = "application/json",
                                 schema = @Schema(implementation = FrameworkErrorResponse.class),
                                 examples = @ExampleObject(value = "{\"status\":503,\"error\":\"Service Unavailable\",\"path\":\"/rooms\"}"))),
-                @ApiResponse(responseCode = "500", description = "Неожиданная техническая ошибка сервера",
+                @ApiResponse(responseCode = "500", description = "Unexpected server failure",
                         content = @Content(mediaType = "application/json",
                                 schema = @Schema(implementation = FrameworkErrorResponse.class)))
             })
@@ -78,46 +78,46 @@ public class RoomController {
             @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true,
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = CreateRoomRequest.class), examples = {
-                                @ExampleObject(name = "С предпочтениями", value = RoomApiExamples.CREATE_REQUEST),
-                                @ExampleObject(name = "По умолчанию", value = RoomApiExamples.DEFAULT_REQUEST)}))
+                                @ExampleObject(name = "With preferences", value = RoomApiExamples.CREATE_REQUEST),
+                                @ExampleObject(name = "Default preferences", value = RoomApiExamples.DEFAULT_REQUEST)}))
             @Valid @RequestBody CreateRoomRequest request) {
         CreateRoomResponse response = roomService.createRoom(request);
         return ResponseEntity.created(URI.create("/rooms/" + response.code())).body(response);
     }
 
     @GetMapping("/{code}")
-    @Operation(operationId = "getRoomLobby", summary = "Получить комнату и список участников",
-            description = "Доступно только участнику этой комнаты с действующим токеном X-Participant-Token. "
-                    + "Тела запроса нет: участник определяется сервером по токену. "
-                    + "Возвращает текущий статус (в том числе VOTING/FINISHED), настройки и список участников "
-                    + "по возрастанию ID, без токенов. Сначала проверяется токен, затем существование комнаты "
-                    + "и принадлежность участника. До создания/присоединения публичного просмотра нет.",
+    @Operation(operationId = "getRoomLobby", summary = "Get a room and its participants",
+            description = "Requires a valid X-Participant-Token belonging to a participant in this room. "
+                    + "There is no request body: the server resolves the participant from the token. "
+                    + "Returns the current status (including VOTING/FINISHED), preferences and participants "
+                    + "ordered by ID, without tokens. Checks run in order: token validity, room existence "
+                    + "and room membership. Public access before creating or joining a room is not supported.",
             security = @SecurityRequirement(name = OpenApiConfig.PARTICIPANT_TOKEN), responses = {
-                @ApiResponse(responseCode = "200", description = "Текущее состояние комнаты",
+                @ApiResponse(responseCode = "200", description = "Current room state",
                         content = @Content(mediaType = "application/json",
                                 schema = @Schema(implementation = RoomDetailsResponse.class),
                                 examples = @ExampleObject(value = RoomApiExamples.LOBBY_RESPONSE))),
-                @ApiResponse(responseCode = "401", description = "INVALID_TOKEN: токен отсутствует, пустой, неизвестен "
-                        + "или старше 24 часов. Нужно получить действующий токен при создании/присоединении.",
+                @ApiResponse(responseCode = "401", description = "INVALID_TOKEN: the token is missing, blank, unknown "
+                        + "or older than 24 hours. Obtain a valid token by creating or joining a room.",
                         content = @Content(mediaType = "application/json",
                                 schema = @Schema(implementation = ErrorResponse.class), examples = {
-                                    @ExampleObject(name = "Нет токена", value = RoomApiExamples.MISSING_TOKEN),
-                                    @ExampleObject(name = "Неизвестный токен", value = RoomApiExamples.INVALID_TOKEN),
-                                    @ExampleObject(name = "Истёкший токен", value = RoomApiExamples.EXPIRED_TOKEN)})),
-                @ApiResponse(responseCode = "403", description = "WRONG_ROOM: токен действителен, но участник из другой комнаты",
+                                    @ExampleObject(name = "Missing token", value = RoomApiExamples.MISSING_TOKEN),
+                                    @ExampleObject(name = "Unknown token", value = RoomApiExamples.INVALID_TOKEN),
+                                    @ExampleObject(name = "Expired token", value = RoomApiExamples.EXPIRED_TOKEN)})),
+                @ApiResponse(responseCode = "403", description = "WRONG_ROOM: the token is valid but belongs to another room",
                         content = @Content(mediaType = "application/json",
                                 schema = @Schema(implementation = ErrorResponse.class),
                                 examples = @ExampleObject(value = RoomApiExamples.WRONG_ROOM))),
-                @ApiResponse(responseCode = "404", description = "ROOM_NOT_FOUND: при действующем токене комната не найдена",
+                @ApiResponse(responseCode = "404", description = "ROOM_NOT_FOUND: the token is valid but the room does not exist",
                         content = @Content(mediaType = "application/json",
                                 schema = @Schema(implementation = ErrorResponse.class),
                                 examples = @ExampleObject(value = RoomApiExamples.ROOM_NOT_FOUND))),
-                @ApiResponse(responseCode = "500", description = "Неожиданная техническая ошибка сервера",
+                @ApiResponse(responseCode = "500", description = "Unexpected server failure",
                         content = @Content(mediaType = "application/json",
                                 schema = @Schema(implementation = FrameworkErrorResponse.class)))
             })
     public RoomDetailsResponse getLobby(
-            @Parameter(description = "Код комнаты, регистр не важен", example = "K7M2QX", required = true)
+            @Parameter(description = "Case-insensitive room code", example = "K7M2QX", required = true)
             @PathVariable String code,
                                         @CurrentParticipant Participant participant) {
         return roomService.getLobby(code, participant);
@@ -125,42 +125,42 @@ public class RoomController {
 
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/{code}/join")
-    @Operation(operationId = "joinRoom", summary = "Присоединиться к комнате по коду",
-            description = "Токен не требуется. Комната должна быть в статусе LOBBY; текущий лимит — 5 человек "
-                    + "вместе с хостом. Имя должно быть свободно в комнате без учёта регистра. "
-                    + "При успехе создаётся новый участник с host=false. Сохраните currentParticipant.token для GET. "
-                    + "Повтор запроса с тем же именем не восстанавливает сессию, а возвращает NAME_TAKEN.",
+    @Operation(operationId = "joinRoom", summary = "Join a room by code",
+            description = "No token is required. The room must be in LOBBY status; the current limit is 5 participants "
+                    + "including the host. The display name must be available in this room (case-insensitive). "
+                    + "Success creates a new participant with host=false. Save currentParticipant.token for GET. "
+                    + "Repeating a request with the same name does not restore a session; it returns NAME_TAKEN.",
             responses = {
-                @ApiResponse(responseCode = "201", description = "Участник добавлен в комнату",
+                @ApiResponse(responseCode = "201", description = "Participant added to the room",
                         content = @Content(mediaType = "application/json",
                                 schema = @Schema(implementation = JoinRoomResponse.class),
                                 examples = @ExampleObject(value = RoomApiExamples.JOIN_RESPONSE))),
-                @ApiResponse(responseCode = "400", description = "VALIDATION_ERROR: имя пустое или не длиной 3–20 символов. "
-                        + "Ошибка JSON/типа поля или отсутствующее тело дают стандартную ошибку Spring без code.",
+                @ApiResponse(responseCode = "400", description = "VALIDATION_ERROR: the display name is blank or not 3-20 characters long. "
+                        + "Malformed JSON, an invalid field type or a missing body return Spring's default error without code.",
                         content = @Content(mediaType = "application/json",
                                 schema = @Schema(oneOf = {ErrorResponse.class, FrameworkErrorResponse.class}), examples = {
-                                    @ExampleObject(name = "Валидация", value = RoomApiExamples.VALIDATION_ERROR)})),
-                @ApiResponse(responseCode = "404", description = "ROOM_NOT_FOUND: комната не найдена",
+                                    @ExampleObject(name = "Validation error", value = RoomApiExamples.VALIDATION_ERROR)})),
+                @ApiResponse(responseCode = "404", description = "ROOM_NOT_FOUND: the room does not exist",
                         content = @Content(mediaType = "application/json",
                                 schema = @Schema(implementation = ErrorResponse.class),
                                 examples = @ExampleObject(value = RoomApiExamples.ROOM_NOT_FOUND))),
-                @ApiResponse(responseCode = "409", description = "Конфликт. Проверки идут по порядку: ROOM_NOT_JOINABLE "
-                        + "(статус не LOBBY), ROOM_FULL (уже 5 участников), NAME_TAKEN (имя занято без учёта регистра).",
+                @ApiResponse(responseCode = "409", description = "Conflict. Checks run in order: ROOM_NOT_JOINABLE "
+                        + "(status is not LOBBY), ROOM_FULL (already 5 participants), NAME_TAKEN (name taken, case-insensitive).",
                         content = @Content(mediaType = "application/json",
                                 schema = @Schema(implementation = ErrorResponse.class), examples = {
-                                    @ExampleObject(name = "Комната заполнена", value = RoomApiExamples.ROOM_FULL),
-                                    @ExampleObject(name = "Имя занято", value = RoomApiExamples.NAME_TAKEN),
-                                    @ExampleObject(name = "Вход закрыт", value = RoomApiExamples.ROOM_NOT_JOINABLE)})),
-                @ApiResponse(responseCode = "415", description = "Неподдерживаемый Content-Type; отправляйте application/json",
+                                    @ExampleObject(name = "Room full", value = RoomApiExamples.ROOM_FULL),
+                                    @ExampleObject(name = "Name taken", value = RoomApiExamples.NAME_TAKEN),
+                                    @ExampleObject(name = "Room not joinable", value = RoomApiExamples.ROOM_NOT_JOINABLE)})),
+                @ApiResponse(responseCode = "415", description = "Unsupported Content-Type; send application/json",
                         content = @Content(mediaType = "application/json",
                                 schema = @Schema(implementation = FrameworkErrorResponse.class))),
-                @ApiResponse(responseCode = "500", description = "Техническая ошибка, в том числе исчерпание 5 попыток "
-                        + "генерации токена. Бизнес-код ошибки не предусмотрен.",
+                @ApiResponse(responseCode = "500", description = "Technical failure, including exhaustion of 5 attempts "
+                        + "to generate a unique participant token. No business error code is provided.",
                         content = @Content(mediaType = "application/json",
                                 schema = @Schema(implementation = FrameworkErrorResponse.class)))
             })
     public JoinRoomResponse joinRoom(
-            @Parameter(description = "Код комнаты из приглашения, регистр не важен", example = "K7M2QX", required = true)
+            @Parameter(description = "Case-insensitive room code from the invitation", example = "K7M2QX", required = true)
             @PathVariable String code,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true,
                     content = @Content(mediaType = "application/json",

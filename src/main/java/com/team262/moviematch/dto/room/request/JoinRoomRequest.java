@@ -5,7 +5,7 @@ import jakarta.validation.constraints.Size;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 public record JoinRoomRequest(
-        @Schema(description = "Имя участника: не пустое, 3–20 символов; свободное в комнате без учёта регистра",
+        @Schema(description = "Participant display name: non-blank, 3-20 characters; available in the room (case-insensitive)",
                 example = "Egor", requiredMode = Schema.RequiredMode.REQUIRED)
         @NotBlank @Size(min = 3, max = 20)
         String displayName

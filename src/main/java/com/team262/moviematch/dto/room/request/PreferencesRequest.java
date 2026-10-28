@@ -8,14 +8,14 @@ import java.util.Set;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 public record PreferencesRequest(
-        @Schema(description = "Тип контента; обязателен, если объект preferences передан", example = "MOVIES",
+        @Schema(description = "Content type; required when the preferences object is supplied", example = "MOVIES",
                 requiredMode = Schema.RequiredMode.REQUIRED)
         @NotNull ContentType contentType,
-        @Schema(description = "ID жанров внешнего каталога. Отсутствие, null или [] означают любые жанры. "
-                + "Дубли удаляются, элементы null запрещены; порядок не важен.", example = "[28,35]", nullable = true)
+        @Schema(description = "External catalog genre IDs. Omitted, null or an empty array means any genre. "
+                + "Duplicates are removed, null elements are rejected and order is irrelevant.", example = "[28,35]", nullable = true)
         Set<@NotNull Integer> genreIds,
-        @Schema(description = "Максимальная длительность: любое целое от 30 до 150 включительно; "
-                + "отсутствие или null снимает ограничение. Кнопки 90/120/150 — варианты интерфейса, не enum API.",
+        @Schema(description = "Maximum duration: any integer from 30 through 150 inclusive; "
+                + "omitted or null means no limit. The 90/120/150 buttons are UI choices, not an API enum.",
                 example = "120", nullable = true)
         @Min(30) @Max(150) Integer maxDurationMinutes
 ) {

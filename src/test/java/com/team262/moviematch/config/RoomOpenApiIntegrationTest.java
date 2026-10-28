@@ -49,6 +49,7 @@ class RoomOpenApiIntegrationTest {
         JsonNode spec = json.readTree(mvc.perform(get("/v3/api-docs"))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
         assertThat(spec.path("openapi").asText()).startsWith("3.0.");
+        assertThat(spec.toString()).doesNotContainPattern("[\\p{IsCyrillic}]");
         JsonNode paths = spec.path("paths");
         assertThat(paths.size()).isEqualTo(3);
         JsonNode create = paths.path("/rooms").path("post");

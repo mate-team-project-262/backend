@@ -4,10 +4,10 @@ import com.team262.moviematch.model.RoomStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 public record CreateRoomResponse(
-        @Schema(description = "Код для приглашения и запросов; roomId не возвращается", example = "K7M2QX",
+        @Schema(description = "Room code used for invitations and requests; roomId is not returned", example = "K7M2QX",
                 requiredMode = Schema.RequiredMode.REQUIRED) String code,
-        @Schema(description = "После создания всегда LOBBY", requiredMode = Schema.RequiredMode.REQUIRED) RoomStatus status,
-        @Schema(description = "Сохранённые настройки", requiredMode = Schema.RequiredMode.REQUIRED) PreferencesResponse preferences,
-        @Schema(description = "Хост с личным токеном. Имя поля именно participant, не currentParticipant.",
+        @Schema(description = "Always LOBBY after creation", requiredMode = Schema.RequiredMode.REQUIRED) RoomStatus status,
+        @Schema(description = "Saved preferences", requiredMode = Schema.RequiredMode.REQUIRED) PreferencesResponse preferences,
+        @Schema(description = "Host with their personal token. This field is named participant, not currentParticipant.",
                 requiredMode = Schema.RequiredMode.REQUIRED) ParticipantWithTokenDto participant) {
 }

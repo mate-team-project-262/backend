@@ -19,28 +19,28 @@ public class OpenApiConfig {
                         .title("Movie Match API")
                         .version("1.0.0")
                         .description("""
-                                API первого спринта Movie Match.
+                                Movie Match Sprint 1 API.
 
-                                1. Создайте комнату через POST /rooms или войдите через POST /rooms/{code}/join.
-                                2. Сохраните токен из participant.token (создание) или currentParticipant.token (вход).
-                                3. Для GET /rooms/{code} передавайте его в заголовке X-Participant-Token.
-                                В Swagger нажмите Authorize и вставьте только токен, без префикса Bearer.
-                                Токен действует 24 часа с момента выдачи.
-                                4. Обновляйте лобби через GET, например раз в 3 секунды.
+                                1. Create a room with POST /rooms or join one with POST /rooms/{code}/join.
+                                2. Save participant.token from creation or currentParticipant.token from joining.
+                                3. Send this token in the X-Participant-Token header for GET /rooms/{code}.
+                                In Swagger, click Authorize and paste the raw token without the Bearer prefix.
+                                Tokens are valid for 24 hours after issuance.
+                                4. Refresh the lobby with GET, for example every 3 seconds.
 
-                                Просмотр лобби до создания комнаты или присоединения не предусмотрен.
-                                roomId и чужие токены не возвращаются. Коды комнаты регистронезависимы.
+                                Public lobby access before creating or joining a room is not supported.
+                                Room IDs and other participants' tokens are never returned. Room codes are case-insensitive.
 
-                                Ошибки бизнес-логики и Bean Validation имеют поля code, message, fieldErrors.
-                                Для логики интерфейса используйте HTTP-статус и code; текст message может меняться.
-                                Ошибки HTTP/JSON и неожиданные ошибки сервера используют стандартный формат Spring,
-                                без гарантированного поля code. Не повторяйте POST автоматически после сетевой ошибки:
-                                запрос мог уже успешно создать комнату или участника.
+                                Business and Bean Validation errors contain code, message and fieldErrors.
+                                Handle errors using the HTTP status and code; message text may change.
+                                HTTP/JSON errors and unexpected server failures use Spring's default error format
+                                without a guaranteed code field. Do not automatically retry POST after a network error:
+                                the request may already have created the room or participant.
                                 """))
                 .components(new Components().addSecuritySchemes(PARTICIPANT_TOKEN,
                         new SecurityScheme().type(SecurityScheme.Type.APIKEY)
                                 .in(SecurityScheme.In.HEADER)
                                 .name(CurrentParticipantArgumentResolver.HEADER)
-                                .description("Личный токен участника. Вставьте UUID без Bearer; нужен только для GET лобби.")));
+                                .description("Personal participant token. Paste the UUID without Bearer; required only for GET lobby.")));
     }
 }
