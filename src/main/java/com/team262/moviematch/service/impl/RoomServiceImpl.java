@@ -116,7 +116,7 @@ public class RoomServiceImpl implements RoomService {
         validateRoom(room);
         validateDisplayName(room, request.displayName());
 
-        String token = tokenService.generateToken();
+        String token = generateUniqueToken();
 
         Participant newParticipant = participantMapper.toParticipant(
                 request, room, token, LocalDateTime.now());
@@ -125,6 +125,17 @@ public class RoomServiceImpl implements RoomService {
         return participantMapper.toJoinRoomResponse(
                 room,
                 savedParticipant);
+    }
+
+    private String generateUniqueToken() {
+        for (int attempt = 0; attempt < CODE_GENERATION_ATTEMPTS; attempt++) {
+            String token = tokenService.generateToken();
+            if (participantRepository.findByToken(token).isEmpty()) {
+                return token;
+            }
+        }
+        throw new IllegalStateException("Could not generate a unique participant token after "
+                + CODE_GENERATION_ATTEMPTS + " attempts");
     }
 
     private void validateDisplayName(Room room, String displayName) {
@@ -144,7 +155,7 @@ public class RoomServiceImpl implements RoomService {
         long participantsInRoom = participantRepository.countByRoom(room);
         if (participantsInRoom >= 5) {
             throw new ConflictException(ErrorCode.ROOM_FULL,
-                    "Room with code has more than 5 participants");
+                    "Room has more than 5 participants");
         }
     }
 }
