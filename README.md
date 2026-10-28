@@ -56,6 +56,23 @@ They cover initial/repeated migration, persisted preferences and statuses,
 case-insensitive code lookup, lazy participant relationships, MySQL constraints,
 database cascade deletion and identity methods with Hibernate proxies.
 
+## Swagger and frontend API
+
+After starting the backend, open [Swagger UI](http://localhost:8080/swagger-ui/index.html).
+The generated contracts are available as [OpenAPI JSON](http://localhost:8080/v3/api-docs)
+and [OpenAPI YAML](http://localhost:8080/v3/api-docs.yaml).
+
+All three Sprint 1 operations include English descriptions, request/response
+examples, DTO constraints and operation-specific HTTP errors. For GET lobby,
+click **Authorize** and paste the participant token without `Bearer`.
+Create and join do not require authorization. Their token fields differ:
+`participant.token` for create, `currentParticipant.token` for join.
+
+See [the frontend guide and error table](docs/frontend-api.md) for the complete
+create/join/lobby workflow and handling of business versus HTTP/JSON errors.
+Run `mvn -Dtest=RoomOpenApiIntegrationTest test` to verify generated documentation,
+Swagger UI and the real HTTP workflow against MySQL.
+
 ## Room creation and lobby
 
 `POST /rooms` accepts the existing `CreateRoomRequest`: `displayName` (3–20
@@ -64,6 +81,7 @@ characters, not blank) and optional `preferences`. It returns `201 Created`, a
 remain in the `participant` field. Missing or null preferences retain the model's
 `MOVIES` default, empty genres and no duration limit. A supplied preferences
 object requires `contentType`; missing or null `genreIds` become an empty set.
+`maxDurationMinutes` accepts any integer from 30 through 150, or null.
 
 Room creation, host persistence and token issuance commit together. Only a room
 code unique constraint violation triggers a retry, with a fresh transaction for
@@ -75,14 +93,18 @@ It returns `RoomDetailsResponse` with current status, preferences, participant
 count, configured `maxParticipants` and participants ordered by ID. The shared
 participant list contains only ID, display name and host flag. Tokens are never
 included. The temporary limit is **5**, configurable with `ROOM_MAX_PARTICIPANTS`
-(`room.max-participants`); enforcing the limit belongs to the separate join task.
+(`room.max-participants`). The current join implementation checks a fixed limit of 5;
+changing that configuration alone does not change join capacity.
 
 Validation failures return `400`; missing, unknown or expired tokens return
 `401 INVALID_TOKEN`; a valid token belonging to another room returns
 `403 WRONG_ROOM`; an unknown room with a valid token returns `404 ROOM_NOT_FOUND`.
 `ForbiddenException` now maps to `403` instead of the previous incorrect `401`.
-DTO fields and request validation constraints are unchanged. Random film
-selection and joining a room are outside this implementation.
+`POST /rooms/{code}/join` creates a participant with `host=false` and returns
+`201` with `currentParticipant.token`. It requires a room in `LOBBY`, fewer than
+5 current participants, and a free display name (case-insensitive). Conflicts
+return `409 ROOM_NOT_JOINABLE`, `ROOM_FULL`, or `NAME_TAKEN`. Joining does not
+restore an earlier participant session. Random film selection remains outside Sprint 1.
 
 DTO PRs #11/#13 and token resolver/service PR #12 are already merged into the
 `develop` base (`ed7fe66`); there are no remaining dependencies on those PRs.
