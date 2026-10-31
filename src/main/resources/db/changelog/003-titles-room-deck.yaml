@@ -1,0 +1,231 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-titles-room-deck
+      author: team262
+      changes:
+        - createTable:
+            tableName: titles
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_titles
+                    nullable: false
+              - column:
+                  name: tmdb_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: media_type
+                  type: VARCHAR(8)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: title
+                  type: VARCHAR(512)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: release_year
+                  type: INT
+              - column:
+                  name: overview
+                  type: TEXT
+              - column:
+                  name: poster_path
+                  type: VARCHAR(512)
+              - column:
+                  name: popularity
+                  type: DECIMAL(19,6)
+              - column:
+                  name: vote_average
+                  type: DECIMAL(4,2)
+              - column:
+                  name: runtime_minutes
+                  type: INT
+              - column:
+                  name: director
+                  type: VARCHAR(512)
+              - column:
+                  name: age_rating
+                  type: VARCHAR(32)
+              - column:
+                  name: budget
+                  type: BIGINT
+              - column:
+                  name: revenue
+                  type: BIGINT
+              - column:
+                  name: original_language
+                  type: VARCHAR(16)
+              - column:
+                  name: created_at
+                  type: DATETIME(6)
+                  defaultValueComputed: CURRENT_TIMESTAMP(6)
+                  constraints:
+                    nullable: false
+        - addUniqueConstraint:
+            tableName: titles
+            columnNames: tmdb_id, media_type
+            constraintName: uk_titles_tmdb_media
+        - sql:
+            dbms: mysql
+            sql: >-
+              ALTER TABLE titles ADD CONSTRAINT ck_titles_media_type
+              CHECK (CAST(media_type AS BINARY) IN ('MOVIE', 'TV'))
+        - createTable:
+            tableName: title_genres
+            columns:
+              - column:
+                  name: title_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: genre_id
+                  type: INT
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            tableName: title_genres
+            columnNames: title_id, genre_id
+            constraintName: pk_title_genres
+        - addForeignKeyConstraint:
+            baseTableName: title_genres
+            baseColumnNames: title_id
+            referencedTableName: titles
+            referencedColumnNames: id
+            constraintName: fk_title_genres_titles
+            onDelete: CASCADE
+        - createTable:
+            tableName: title_creators
+            columns:
+              - column:
+                  name: title_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: position
+                  type: INT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(512)
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            tableName: title_creators
+            columnNames: title_id, position
+            constraintName: pk_title_creators
+        - addForeignKeyConstraint:
+            baseTableName: title_creators
+            baseColumnNames: title_id
+            referencedTableName: titles
+            referencedColumnNames: id
+            constraintName: fk_title_creators_titles
+            onDelete: CASCADE
+        - createTable:
+            tableName: title_cast
+            columns:
+              - column:
+                  name: title_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: position
+                  type: INT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(512)
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            tableName: title_cast
+            columnNames: title_id, position
+            constraintName: pk_title_cast
+        - addForeignKeyConstraint:
+            baseTableName: title_cast
+            baseColumnNames: title_id
+            referencedTableName: titles
+            referencedColumnNames: id
+            constraintName: fk_title_cast_titles
+            onDelete: CASCADE
+        - createTable:
+            tableName: room_titles
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_room_titles
+                    nullable: false
+              - column:
+                  name: room_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: title_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: position
+                  type: INT
+                  constraints:
+                    nullable: false
+        - addUniqueConstraint:
+            tableName: room_titles
+            columnNames: room_id, position
+            constraintName: uk_room_titles_position
+        - addUniqueConstraint:
+            tableName: room_titles
+            columnNames: room_id, title_id
+            constraintName: uk_room_titles_title
+        - createIndex:
+            tableName: room_titles
+            indexName: idx_room_titles_title_id
+            columns:
+              - column:
+                  name: title_id
+        - addForeignKeyConstraint:
+            baseTableName: room_titles
+            baseColumnNames: room_id
+            referencedTableName: rooms
+            referencedColumnNames: id
+            constraintName: fk_room_titles_rooms
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            baseTableName: room_titles
+            baseColumnNames: title_id
+            referencedTableName: titles
+            referencedColumnNames: id
+            constraintName: fk_room_titles_titles
+            onDelete: RESTRICT
+        - sql:
+            dbms: mysql
+            sql: >-
+              ALTER TABLE room_titles ADD CONSTRAINT ck_room_titles_position
+              CHECK (position BETWEEN 0 AND 19)
+      rollback:
+        - dropTable:
+            tableName: room_titles
+        - dropTable:
+            tableName: title_cast
+        - dropTable:
+            tableName: title_creators
+        - dropTable:
+            tableName: title_genres
+        - dropTable:
+            tableName: titles

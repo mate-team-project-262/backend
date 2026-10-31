@@ -68,7 +68,7 @@ class RoomPersistenceTests {
                 Integer.class
         );
 
-        assertThat(appliedChanges).isEqualTo(2);
+        assertThat(appliedChanges).isEqualTo(3);
 
         liquibase.afterPropertiesSet();
 
