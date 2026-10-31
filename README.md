@@ -160,4 +160,38 @@ The five-person room limit enforcement and scheduled 24-hour cleanup belong to
 later service tasks. Streaming services, accounts and swipe history are outside
 this migration.
 
+## Sprint 2 title catalog and room decks (S2-2)
+
+Migration `003-titles-room-deck.yaml` adds the shared `titles` catalog and
+`room_titles`. `Title` stores all card details; unavailable catalog details are
+nullable. `MediaType.MOVIE` and `MediaType.TV` identify the TMDB namespaces and
+are separate from room `ContentType` preferences. Money uses `Long`/`BIGINT`;
+popularity and vote average use decimal values. `createdAt` uses a UTC instant.
+
+`title_genres` stores numeric genre IDs as a set. `title_creators` and
+`title_cast` store names as ordered lists, including repeated names. Collections
+are lazy and should be read inside a transaction when assembling card details.
+
+Before adding a card, look up its shared title with
+`TitleRepository.findByTmdbIdAndMediaType(tmdbId, mediaType)` and reuse it if
+present. The database unique key on `(tmdb_id, media_type)` prevents duplicates,
+including concurrent inserts. If two transactions create the same catalog entry,
+the caller must retry the lookup in a new transaction after the losing insert
+rolls back. Saving a new `Title` does not automatically perform an upsert.
+
+Save `RoomTitle` entries with positions from 0 through 19. Database constraints
+reject duplicate positions or titles within one room. Read the stored order with
+`RoomTitleRepository.findAllByRoomIdOrderByPositionAsc(roomId)`; it fetches each
+entry's title together with the deck. Sharing a title across rooms does not copy
+the catalog row. Deleting a room removes its deck and retains shared titles;
+deleting a referenced title is blocked. Deleting an unreferenced title removes
+its genre, creator and cast collections.
+
+This task provides persistence and repositories. Deck generation, TMDB fetching,
+HTTP endpoints and API DTOs belong to their respective tasks. Consumers should
+save a complete deck in one transaction and reload it for every participant.
+Run `mvn -Dtest=TitlePersistenceTests,RoomPersistenceTests test` with Docker to
+verify migrations, complete details, reads after commit in independent
+transactions, shared title reuse, ordering and MySQL constraints.
+
 Never commit `.env` files or real credentials. `.env.example` contains placeholders only.

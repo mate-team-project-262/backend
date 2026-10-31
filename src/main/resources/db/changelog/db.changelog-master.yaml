@@ -5,3 +5,6 @@ databaseChangeLog:
   - include:
       file: 002-participant-tokens.yaml
       relativeToChangelogFile: true
+  - include:
+      file: 003-titles-room-deck.yaml
+      relativeToChangelogFile: true
