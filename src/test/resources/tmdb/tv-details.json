@@ -1,0 +1,90 @@
+{
+  "id": 1396,
+  "name": "Example Series",
+  "first_air_date": "2022-03-01",
+  "overview": "A complete TV overview.",
+  "poster_path": "/tv.jpg",
+  "popularity": 98.125,
+  "vote_average": 9.1,
+  "episode_run_time": [
+    0,
+    47,
+    52
+  ],
+  "genres": [
+    {
+      "id": 18,
+      "name": "Drama"
+    },
+    {
+      "id": 10759,
+      "name": "Action & Adventure"
+    }
+  ],
+  "created_by": [
+    {
+      "id": 1,
+      "name": "First Creator"
+    },
+    {
+      "id": 2,
+      "name": "Second Creator"
+    }
+  ],
+  "original_language": "en",
+  "aggregate_credits": {
+    "cast": [
+      {
+        "name": "Series Actor B",
+        "order": 1,
+        "roles": [
+          {
+            "character": "B",
+            "episode_count": 2
+          }
+        ]
+      },
+      {
+        "name": "Series Actor A",
+        "order": 0,
+        "roles": [
+          {
+            "character": "A",
+            "episode_count": 20
+          }
+        ]
+      }
+    ],
+    "crew": [
+      {
+        "name": "Series Director",
+        "jobs": [
+          {
+            "job": "Director",
+            "episode_count": 12
+          },
+          {
+            "job": "Writer",
+            "episode_count": 1
+          }
+        ]
+      }
+    ]
+  },
+  "content_ratings": {
+    "results": [
+      {
+        "iso_3166_1": "GB",
+        "rating": "15"
+      },
+      {
+        "iso_3166_1": "US",
+        "rating": ""
+      },
+      {
+        "iso_3166_1": "US",
+        "rating": "TV-MA"
+      }
+    ]
+  }
+}
