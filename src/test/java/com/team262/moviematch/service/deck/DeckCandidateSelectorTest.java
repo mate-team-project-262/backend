@@ -76,6 +76,46 @@ class DeckCandidateSelectorTest {
         assertThat(result).hasSize(20).extracting(TmdbTitle::tmdbId).doesNotHaveDuplicates();
     }
 
+    @ParameterizedTest
+    @EnumSource(ContentType.class)
+    void partialPagesFillDeckWithinTwentyDetailRequests(ContentType type) {
+        AtomicInteger detailRequests = new AtomicInteger();
+        TitleSource source = new StubTitleSource() {
+            @Override
+            public TmdbTitle getDetails(ContentType contentType, long tmdbId) {
+                detailRequests.incrementAndGet();
+                return super.getDetails(contentType, tmdbId);
+            }
+        };
+        DeckProperties props = new DeckProperties(50, 4, 8, 20);
+        List<TmdbTitle> result = selector(source, props).select(type,
+                new DiscoverFilters(Set.of(), null, null), new Random(5));
+
+        assertThat(result).hasSize(20).extracting(TmdbTitle::tmdbId).doesNotHaveDuplicates();
+        assertThat(result).allSatisfy(card -> assertThat(card.mediaType()).isEqualTo(type));
+        assertThat(detailRequests.get()).isEqualTo(20);
+    }
+
+    @ParameterizedTest
+    @EnumSource(ContentType.class)
+    void overlappingPagesKeepAllUniqueCandidatesForReserve(ContentType type) {
+        FakeSource source = new FakeSource(4) {
+            @Override
+            public DiscoverPage discover(ContentType contentType, DiscoverFilters filters, int page) {
+                super.discover(contentType, filters, page);
+                return new DiscoverPage(IntStream.range(0, 20).mapToObj(i ->
+                        card(100L + i, contentType, 90).candidate()).toList(), page, 4, 80);
+            }
+        };
+        DeckProperties props = properties();
+        List<TmdbTitle> result = selector(source, props).select(type, filters, new Random(42));
+
+        assertThat(result).hasSize(20).extracting(TmdbTitle::tmdbId).doesNotHaveDuplicates();
+        assertThat(result).allSatisfy(card -> assertThat(card.mediaType()).isEqualTo(type));
+        assertThat(source.detailCalls.get()).isEqualTo(20);
+        assertThat(source.discoverCalls.get()).isLessThanOrEqualTo(props.maxDiscoverRequests());
+    }
+
     @Test
     void invalidDetailsAreReplacedWithoutExceedingBudget() {
         FakeSource source = new FakeSource(50);

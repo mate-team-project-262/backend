@@ -63,12 +63,12 @@ public class DeckCandidateSelector {
             for (int j = 0; j < ids.size(); j++) {
                 if (j < quota) {
                     candidates.add(ids.get(j));
-                } else if (reserve.size() < properties.maxDetailsRequests() - DeckProperties.SIZE) {
+                } else {
                     reserve.add(ids.get(j));
                 }
             }
         }
-        candidates.addAll(reserve); // At most maxDetailsRequests IDs.
+        candidates.addAll(reserve);
         first = null;
         List<TmdbTitle> accepted = new ArrayList<>(DeckProperties.SIZE);
         int detailsRequests = 0;
