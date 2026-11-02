@@ -10,7 +10,6 @@ import com.team262.moviematch.exception.ex.ForbiddenException;
 import com.team262.moviematch.mapper.TitleMapper;
 import com.team262.moviematch.model.ContentType;
 import com.team262.moviematch.model.DeckBuildStatus;
-import com.team262.moviematch.model.MediaType;
 import com.team262.moviematch.model.Participant;
 import com.team262.moviematch.model.Room;
 import com.team262.moviematch.repository.ParticipantRepository;
@@ -152,7 +151,7 @@ class RoomDeckIntegrationTest {
     @Test
     void databaseFailureRollsBackAllTitlesAndDeckEntries() {
         Fixture fixture = fixture("ABC234");
-        source.detail = id -> copyWith(DeckCandidateSelectorTest.card(id, MediaType.MOVIE, 90),
+        source.detail = id -> copyWith(DeckCandidateSelectorTest.card(id, ContentType.MOVIES, 90),
                 id == 119 ? "x".repeat(600) : "Valid card", "Director");
         assertThatThrownBy(() -> service.prepare("ABC234", fixture.host().getId())).isInstanceOf(
                         org.springframework.dao.DataIntegrityViolationException.class);
@@ -167,7 +166,7 @@ class RoomDeckIntegrationTest {
         Fixture fixture = fixture("ABC234");
         new TransactionTemplate(transactions).executeWithoutResult(status ->
                 rooms.findById(fixture.room().getId()).orElseThrow().setContentType(ContentType.TV_SERIES));
-        source.detail = id -> copyWith(DeckCandidateSelectorTest.card(id, MediaType.TV, 45),
+        source.detail = id -> copyWith(DeckCandidateSelectorTest.card(id, ContentType.TV_SERIES, 45),
                 "Series", "Director ".repeat(200));
         List<Long> ids = service.prepare("ABC234", fixture.host().getId());
         assertThat(titles.findById(ids.getFirst()).orElseThrow().getDirector())
@@ -195,7 +194,7 @@ class RoomDeckIntegrationTest {
                 fixture.room().getId());
         RoomDeckStore.Claim current = store.claim("ABC234", fixture.host().getId(), Duration.ofSeconds(5));
         List<TmdbTitle> cards = IntStream.range(0, 20).mapToObj(i ->
-                DeckCandidateSelectorTest.card(100L + i, MediaType.MOVIE, 90)).toList();
+                DeckCandidateSelectorTest.card(100L + i, ContentType.MOVIES, 90)).toList();
         assertThatThrownBy(() -> store.complete(old, cards, new DeckDeadline(Duration.ofSeconds(5))))
                 .isInstanceOf(ConflictException.class).extracting("code").isEqualTo(ErrorCode.DECK_BUILD_STALE);
         store.fail(old);
@@ -226,7 +225,7 @@ class RoomDeckIntegrationTest {
         new TransactionTemplate(transactions).executeWithoutResult(status ->
                 rooms.findById(fixture.room().getId()).orElseThrow().setMaxDurationMinutes(60));
         List<TmdbTitle> cards = IntStream.range(0, 20).mapToObj(i ->
-                DeckCandidateSelectorTest.card(100L + i, MediaType.MOVIE, 90)).toList();
+                DeckCandidateSelectorTest.card(100L + i, ContentType.MOVIES, 90)).toList();
         try {
             assertThatThrownBy(() -> store.complete(claim, cards, new DeckDeadline(Duration.ofSeconds(5))))
                     .isInstanceOf(ConflictException.class).extracting("code").isEqualTo(ErrorCode.DECK_BUILD_STALE);
@@ -264,7 +263,7 @@ class RoomDeckIntegrationTest {
         List<Long> ids = service.prepare("ABC234", first.host().getId());
         Fixture second = fixture("DEF567");
         source.detail = id -> {
-            TmdbTitle card = DeckCandidateSelectorTest.card(id, MediaType.MOVIE, 90);
+            TmdbTitle card = DeckCandidateSelectorTest.card(id, ContentType.MOVIES, 90);
             return new TmdbTitle(card.tmdbId(), card.mediaType(), card.title(), card.releaseYear(),
                     card.overview(), card.posterPath(), card.popularity(), card.voteAverage(),
                     card.runtimeMinutes(), List.of(new com.team262.moviematch.source.TitleGenre(18, "Драма")),

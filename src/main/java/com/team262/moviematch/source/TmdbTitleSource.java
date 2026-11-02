@@ -5,7 +5,6 @@ import com.team262.moviematch.client.TmdbClient;
 import com.team262.moviematch.config.tmdb.TmdbProperties;
 import com.team262.moviematch.exception.ex.ExternalServiceException;
 import com.team262.moviematch.model.ContentType;
-import com.team262.moviematch.model.MediaType;
 import java.net.URI;
 import java.util.stream.Collectors;
 import org.springframework.util.LinkedMultiValueMap;
@@ -32,7 +31,7 @@ public class TmdbTitleSource implements TitleSource {
 
     @Override
     public DiscoverPage discover(ContentType contentType, DiscoverFilters filters, int page) {
-        MediaType mediaType = TitleSourceSupport.mediaType(contentType);
+        ContentType mediaType = java.util.Objects.requireNonNull(contentType, "contentType");
         TitleSourceSupport.checkPage(page);
         DiscoverFilters effective = TitleSourceSupport.filtersOrEmpty(filters);
         MultiValueMap<String, String> query = baseQuery();
@@ -59,10 +58,10 @@ public class TmdbTitleSource implements TitleSource {
 
     @Override
     public TmdbTitle getDetails(ContentType contentType, long tmdbId) {
-        MediaType mediaType = TitleSourceSupport.mediaType(contentType);
+        ContentType mediaType = java.util.Objects.requireNonNull(contentType, "contentType");
         TitleSourceSupport.checkId(tmdbId);
         MultiValueMap<String, String> query = baseQuery();
-        query.add("append_to_response", mediaType == MediaType.MOVIE
+        query.add("append_to_response", mediaType == ContentType.MOVIES
                 ? "credits,release_dates" : "aggregate_credits,content_ratings");
         JsonNode response = client.get("/" + path(mediaType) + "/" + tmdbId, query);
         try {
@@ -82,7 +81,7 @@ public class TmdbTitleSource implements TitleSource {
         return query;
     }
 
-    private String path(MediaType type) {
-        return type == MediaType.MOVIE ? "movie" : "tv";
+    private String path(ContentType type) {
+        return type == ContentType.MOVIES ? "movie" : "tv";
     }
 }

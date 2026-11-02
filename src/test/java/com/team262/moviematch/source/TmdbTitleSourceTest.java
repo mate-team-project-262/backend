@@ -6,7 +6,6 @@ import com.team262.moviematch.config.tmdb.TmdbProperties;
 import com.team262.moviematch.exception.ErrorCode;
 import com.team262.moviematch.exception.ex.ExternalServiceException;
 import com.team262.moviematch.model.ContentType;
-import com.team262.moviematch.model.MediaType;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.net.ConnectException;
@@ -79,7 +78,7 @@ class TmdbTitleSourceTest {
         assertThat(result.totalPages()).isEqualTo(3);
         assertThat(result.totalResults()).isEqualTo(41);
         assertThat(result.items())
-                .containsExactly(new TitleCandidate(42L, movie ? MediaType.MOVIE : MediaType.TV,
+                .containsExactly(new TitleCandidate(42L, movie ? ContentType.MOVIES : ContentType.TV_SERIES,
                         "Candidate", 2021, "Story", "/image.jpg", new java.math.BigDecimal("42.125")));
     }
 
@@ -101,7 +100,7 @@ class TmdbTitleSourceTest {
                 .andRespond(withSuccess(fixture("movie-details.json"), APPLICATION_JSON));
         TmdbTitle title = source.getDetails(ContentType.MOVIES, 550);
         assertThat(title.tmdbId()).isEqualTo(550L);
-        assertThat(title.mediaType()).isEqualTo(MediaType.MOVIE);
+        assertThat(title.mediaType()).isEqualTo(ContentType.MOVIES);
         assertThat(title.title()).isEqualTo("Example Movie");
         assertThat(title.releaseYear()).isEqualTo(2024);
         assertThat(title.overview()).isEqualTo("A complete movie overview.");
@@ -126,7 +125,7 @@ class TmdbTitleSourceTest {
                 .andRespond(withSuccess(fixture("tv-details.json"), APPLICATION_JSON));
         TmdbTitle title = source.getDetails(ContentType.TV_SERIES, 1396);
         assertThat(title.tmdbId()).isEqualTo(1396L);
-        assertThat(title.mediaType()).isEqualTo(MediaType.TV);
+        assertThat(title.mediaType()).isEqualTo(ContentType.TV_SERIES);
         assertThat(title.title()).isEqualTo("Example Series");
         assertThat(title.releaseYear()).isEqualTo(2022);
         assertThat(title.overview()).isEqualTo("A complete TV overview.");

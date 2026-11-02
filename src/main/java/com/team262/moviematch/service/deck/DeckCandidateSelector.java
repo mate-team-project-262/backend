@@ -6,7 +6,6 @@ import com.team262.moviematch.exception.ex.ConflictException;
 import com.team262.moviematch.exception.ex.DeckBuildException;
 import com.team262.moviematch.exception.ex.ExternalServiceException;
 import com.team262.moviematch.model.ContentType;
-import com.team262.moviematch.model.MediaType;
 import com.team262.moviematch.source.DiscoverFilters;
 import com.team262.moviematch.source.DiscoverPage;
 import com.team262.moviematch.source.TitleCandidate;
@@ -51,7 +50,7 @@ public class DeckCandidateSelector {
         Set<Long> seen = new HashSet<>(); // At most 20 IDs per discover request, never entity graphs.
         Deque<Long> candidates = new ArrayDeque<>();
         Deque<Long> reserve = new ArrayDeque<>();
-        MediaType mediaType = type == ContentType.MOVIES ? MediaType.MOVIE : MediaType.TV;
+        ContentType mediaType = type;
 
         for (int i = 0; i < initialPages; i++) {
             int pageNumber = pages.get(i);
@@ -107,7 +106,7 @@ public class DeckCandidateSelector {
         return List.copyOf(accepted);
     }
 
-    private List<Long> shuffledIds(DiscoverPage page, MediaType mediaType, Set<Long> seen, Random random) {
+    private List<Long> shuffledIds(DiscoverPage page, ContentType mediaType, Set<Long> seen, Random random) {
         List<Long> ids = new ArrayList<>();
         for (TitleCandidate candidate : page.items()) {
             if (candidate.tmdbId() == null || candidate.tmdbId() <= 0 || candidate.mediaType() != mediaType) {

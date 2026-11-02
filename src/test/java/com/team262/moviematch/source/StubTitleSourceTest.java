@@ -2,7 +2,6 @@ package com.team262.moviematch.source;
 
 import com.team262.moviematch.exception.ex.ExternalServiceException;
 import com.team262.moviematch.model.ContentType;
-import com.team262.moviematch.model.MediaType;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -31,7 +30,7 @@ class StubTitleSourceTest {
             assertThat(ids.add(candidate.tmdbId())).isTrue();
             TmdbTitle title = source.getDetails(type, candidate.tmdbId());
             assertThat(title.candidate()).isEqualTo(candidate);
-            assertThat(title.mediaType()).isEqualTo(type == ContentType.MOVIES ? MediaType.MOVIE : MediaType.TV);
+            assertThat(title.mediaType()).isEqualTo(type);
             assertThat(title.title()).isNotBlank();
             assertThat(title.releaseYear()).isPositive();
             assertThat(title.overview()).isNotBlank();

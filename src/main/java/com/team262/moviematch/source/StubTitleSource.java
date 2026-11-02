@@ -2,7 +2,6 @@ package com.team262.moviematch.source;
 
 import com.team262.moviematch.exception.ex.ExternalServiceException;
 import com.team262.moviematch.model.ContentType;
-import com.team262.moviematch.model.MediaType;
 import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.List;
@@ -23,14 +22,14 @@ public class StubTitleSource implements TitleSource {
     private final List<DemoTitle> catalog;
 
     public StubTitleSource() {
-        catalog = java.util.Arrays.stream(MediaType.values())
+        catalog = java.util.Arrays.stream(ContentType.values())
                 .flatMap(type -> IntStream.range(0, NAMES.size()).mapToObj(index -> create(type, index)))
                 .toList();
     }
 
     @Override
     public DiscoverPage discover(ContentType contentType, DiscoverFilters filters, int page) {
-        MediaType type = TitleSourceSupport.mediaType(contentType);
+        ContentType type = java.util.Objects.requireNonNull(contentType, "contentType");
         TitleSourceSupport.checkPage(page);
         DiscoverFilters effective = TitleSourceSupport.filtersOrEmpty(filters);
         List<TitleCandidate> filtered = catalog.stream()
@@ -52,15 +51,15 @@ public class StubTitleSource implements TitleSource {
 
     @Override
     public TmdbTitle getDetails(ContentType contentType, long tmdbId) {
-        MediaType type = TitleSourceSupport.mediaType(contentType);
+        ContentType type = java.util.Objects.requireNonNull(contentType, "contentType");
         TitleSourceSupport.checkId(tmdbId);
         return catalog.stream().map(DemoTitle::title)
                 .filter(title -> title.mediaType() == type && title.tmdbId() == tmdbId)
                 .findFirst().orElseThrow(ExternalServiceException::new);
     }
 
-    private DemoTitle create(MediaType type, int index) {
-        boolean movie = type == MediaType.MOVIE;
+    private DemoTitle create(ContentType type, int index) {
+        boolean movie = type == ContentType.MOVIES;
         TitleGenre mainGenre = switch (index % 3) {
             case 0 -> new TitleGenre(movie ? 28 : 10759, movie ? "Action" : "Action & Adventure");
             case 1 -> new TitleGenre(35, "Comedy");

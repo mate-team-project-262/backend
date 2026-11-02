@@ -6,7 +6,6 @@ import com.team262.moviematch.exception.ex.ConflictException;
 import com.team262.moviematch.exception.ex.DeckBuildException;
 import com.team262.moviematch.exception.ex.ExternalServiceException;
 import com.team262.moviematch.model.ContentType;
-import com.team262.moviematch.model.MediaType;
 import com.team262.moviematch.source.DiscoverFilters;
 import com.team262.moviematch.source.DiscoverPage;
 import com.team262.moviematch.source.StubTitleSource;
@@ -67,7 +66,7 @@ class DeckCandidateSelectorTest {
         assertThat(result).hasSize(20);
         assertThat(source.discoverCalls.get()).isEqualTo(1);
         assertThat(result).allSatisfy(title -> assertThat(title.mediaType())
-                .isEqualTo(type == ContentType.MOVIES ? MediaType.MOVIE : MediaType.TV));
+                .isEqualTo(type));
     }
 
     @Test
@@ -83,7 +82,7 @@ class DeckCandidateSelectorTest {
     void invalidDetailsAreReplacedWithoutExceedingBudget() {
         FakeSource source = new FakeSource(50);
         AtomicInteger remainingBad = new AtomicInteger(4);
-        source.detail = id -> card(id, MediaType.MOVIE, remainingBad.getAndDecrement() > 0 ? 999 : 90);
+        source.detail = id -> card(id, ContentType.MOVIES, remainingBad.getAndDecrement() > 0 ? 999 : 90);
         DeckProperties props = properties();
         List<TmdbTitle> result = selector(source, props).select(ContentType.MOVIES,
                 filters, new DeckDeadline(props.buildTimeout()), new Random(42));
@@ -98,7 +97,7 @@ class DeckCandidateSelectorTest {
             @Override
             public DiscoverPage discover(ContentType type, DiscoverFilters filters, int page) {
                 super.discover(type, filters, page);
-                return new DiscoverPage(List.of(card(123, MediaType.MOVIE, 90).candidate()),
+                return new DiscoverPage(List.of(card(123, ContentType.MOVIES, 90).candidate()),
                         page, 50, 1000);
             }
         };
@@ -113,7 +112,7 @@ class DeckCandidateSelectorTest {
     @Test
     void allUnsuitableDetailsStopAfterThirtyRequests() {
         FakeSource source = new FakeSource(50);
-        source.detail = id -> card(id, MediaType.MOVIE, 999);
+        source.detail = id -> card(id, ContentType.MOVIES, 999);
         DeckProperties props = properties();
         assertThatThrownBy(() -> selector(source, props).select(ContentType.MOVIES,
                 filters, new DeckDeadline(props.buildTimeout()), new Random(42)))
@@ -150,7 +149,7 @@ class DeckCandidateSelectorTest {
         Thread caller = Thread.currentThread();
         source.detail = id -> {
             assertThat(Thread.currentThread()).isSameAs(caller);
-            return card(id, MediaType.MOVIE, 90);
+            return card(id, ContentType.MOVIES, 90);
         };
         DeckProperties props = properties();
         assertThat(selector(source, props).select(ContentType.MOVIES, filters,
@@ -181,7 +180,7 @@ class DeckCandidateSelectorTest {
         assertThat(one).isNotEqualTo(two);
     }
 
-    static TmdbTitle card(long id, MediaType type, Integer runtime) {
+    static TmdbTitle card(long id, ContentType type, Integer runtime) {
         return new TmdbTitle(id, type, "Card " + id, 2020, "Overview", "/poster.jpg",
                 BigDecimal.TEN, new BigDecimal("8.5"), runtime, List.of(new TitleGenre(18, "Drama")),
                 "Director", List.of("Creator"), List.of("Actor A", "Actor B"), "PG-13",
@@ -205,7 +204,7 @@ class DeckCandidateSelectorTest {
         public DiscoverPage discover(ContentType type, DiscoverFilters filters, int page) {
             discoverCalls.incrementAndGet();
             pages.add(page);
-            MediaType media = type == ContentType.MOVIES ? MediaType.MOVIE : MediaType.TV;
+            ContentType media = type;
             return new DiscoverPage(IntStream.range(0, 20).mapToObj(i ->
                     card(page * 100L + i, media, 90).candidate()).toList(), page,
                     pageCount, pageCount * 20L);
@@ -218,7 +217,7 @@ class DeckCandidateSelectorTest {
             maxActive.accumulateAndGet(concurrent, Math::max);
             try {
                 return detail == null ? card(id,
-                        type == ContentType.MOVIES ? MediaType.MOVIE : MediaType.TV, 90) : detail.apply(id);
+                        type, 90) : detail.apply(id);
             } finally {
                 active.decrementAndGet();
             }

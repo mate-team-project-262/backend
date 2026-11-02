@@ -88,6 +88,14 @@ against TMDB on 2026-11-02. Unknown legacy IDs are kept with a null name.
 The migration contains no network calls. Rolling it back preserves genre IDs
 but removes the newly stored names. Room filter preferences still store IDs.
 
+Migration `006` unifies title types with room `ContentType`: `MOVIE` becomes
+`MOVIES`, and `TV` becomes `TV_SERIES`. It widens `titles.media_type` to 16
+characters and replaces the database check constraint. Title IDs, unique
+catalog identities and room links are preserved. Rollback restores the legacy
+values and column width. Deploy the new backend together with this migration;
+the previous backend expects the legacy enum values. The internal `mediaType`
+field name stays the same; only the enum type and stored values change.
+
 ## Errors and verification
 
 * `502 TMDB_UNAVAILABLE`: upstream transport, response or payload failure.

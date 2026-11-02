@@ -25,7 +25,7 @@ class GenreMigrationTest {
             try (var connection = DriverManager.getConnection(mysql.getJdbcUrl(),
                     mysql.getUsername(), mysql.getPassword());
                     var resources = new ClassLoaderResourceAccessor();
-                    var liquibase = new Liquibase("db/changelog/db.changelog-master.yaml", resources,
+                    var liquibase = new Liquibase("db/changelog/genre-names-upgrade.yaml", resources,
                             DatabaseFactory.getInstance().findCorrectDatabaseImplementation(
                                     new JdbcConnection(connection)))) {
                 var jdbc = new JdbcTemplate(new SingleConnectionDataSource(connection, true));
@@ -69,7 +69,7 @@ class GenreMigrationTest {
                 connection.commit(); // Release read metadata locks before the second connection's DDL.
                 try (var nextConnection = DriverManager.getConnection(mysql.getJdbcUrl(),
                         mysql.getUsername(), mysql.getPassword());
-                        var nextRun = new Liquibase("db/changelog/db.changelog-master.yaml", resources,
+                        var nextRun = new Liquibase("db/changelog/genre-names-upgrade.yaml", resources,
                                 DatabaseFactory.getInstance().findCorrectDatabaseImplementation(
                                         new JdbcConnection(nextConnection)))) {
                     try (var statement = nextConnection.createStatement()) {

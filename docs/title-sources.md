@@ -50,8 +50,9 @@ Spring context exposes exactly one `TitleSource`.
 
 Movie details append `credits,release_dates`. TV details append
 `aggregate_credits,content_ratings`, so TV cast and crew cover the entire show.
-`MOVIES` maps to `MediaType.MOVIE`; `TV_SERIES` maps to `MediaType.TV`, matching
-the shared S2-2 catalog identity.
+Rooms, candidates, details and persisted titles use one `ContentType` enum:
+`MOVIES` or `TV_SERIES`. The TMDB source alone maps these values to the URL
+segments `movie` and `tv`. The internal field remains named `mediaType`.
 
 | Field | Movie | TV |
 | --- | --- | --- |

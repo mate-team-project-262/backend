@@ -1,7 +1,7 @@
 package com.team262.moviematch.repository;
 
 import com.team262.moviematch.MySqlTestConfiguration;
-import com.team262.moviematch.model.MediaType;
+import com.team262.moviematch.model.ContentType;
 import com.team262.moviematch.model.Room;
 import com.team262.moviematch.model.RoomTitle;
 import com.team262.moviematch.model.Title;
@@ -60,7 +60,7 @@ class TitlePersistenceTests {
         assertThat(jdbc.queryForList("show tables", String.class))
                 .contains("titles", "room_titles", "title_genres", "title_creators", "title_cast");
         Integer before = jdbc.queryForObject("select count(*) from DATABASECHANGELOG", Integer.class);
-        assertThat(before).isEqualTo(5);
+        assertThat(before).isEqualTo(6);
         liquibase.afterPropertiesSet();
         assertThat(jdbc.queryForObject("select count(*) from DATABASECHANGELOG", Integer.class))
                 .isEqualTo(before);
@@ -68,7 +68,7 @@ class TitlePersistenceTests {
 
     @Test
     void allCardDetailsAndOrderedListsRoundTrip() {
-        Title title = new Title(123L, MediaType.MOVIE, "Полное название 🎬");
+        Title title = new Title(123L, ContentType.MOVIES, "Полное название 🎬");
         title.setReleaseYear(2026);
         title.setOverview("Подробное описание. ".repeat(500));
         title.setPosterPath("/poster.jpg");
@@ -88,7 +88,7 @@ class TitlePersistenceTests {
         titles.saveAndFlush(title);
         entityManager.clear();
 
-        Title loaded = titles.findByTmdbIdAndMediaType(123L, MediaType.MOVIE).orElseThrow();
+        Title loaded = titles.findByTmdbIdAndMediaType(123L, ContentType.MOVIES).orElseThrow();
         assertThat(loaded.getId()).isEqualTo(title.getId());
         assertThat(loaded.getTitle()).isEqualTo(title.getTitle());
         assertThat(loaded.getReleaseYear()).isEqualTo(2026);
@@ -110,7 +110,7 @@ class TitlePersistenceTests {
 
     @Test
     void missingCatalogDetailsStayNullAndCollectionsStayEmpty() {
-        Title title = titles.saveAndFlush(new Title(123L, MediaType.TV, "Series"));
+        Title title = titles.saveAndFlush(new Title(123L, ContentType.TV_SERIES, "Series"));
         entityManager.clear();
         Title loaded = titles.findById(title.getId()).orElseThrow();
         assertThat(loaded.getCreatedAt()).isNotNull();
@@ -124,19 +124,19 @@ class TitlePersistenceTests {
 
     @Test
     void duplicateCatalogIdentityIsRejected() {
-        titles.saveAndFlush(new Title(123L, MediaType.MOVIE, "Original"));
-        assertThatThrownBy(() -> titles.saveAndFlush(new Title(123L, MediaType.MOVIE, "Other")))
+        titles.saveAndFlush(new Title(123L, ContentType.MOVIES, "Original"));
+        assertThatThrownBy(() -> titles.saveAndFlush(new Title(123L, ContentType.MOVIES, "Other")))
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
 
     @Test
     void sameTmdbIdCanIdentifyMovieAndTvSeries() {
-        Title movie = titles.saveAndFlush(new Title(123L, MediaType.MOVIE, "Movie"));
-        Title series = titles.saveAndFlush(new Title(123L, MediaType.TV, "Series"));
+        Title movie = titles.saveAndFlush(new Title(123L, ContentType.MOVIES, "Movie"));
+        Title series = titles.saveAndFlush(new Title(123L, ContentType.TV_SERIES, "Series"));
         entityManager.clear();
-        assertThat(titles.findByTmdbIdAndMediaType(123L, MediaType.MOVIE))
+        assertThat(titles.findByTmdbIdAndMediaType(123L, ContentType.MOVIES))
                 .map(Title::getId).contains(movie.getId());
-        assertThat(titles.findByTmdbIdAndMediaType(123L, MediaType.TV))
+        assertThat(titles.findByTmdbIdAndMediaType(123L, ContentType.TV_SERIES))
                 .map(Title::getId).contains(series.getId());
     }
 
@@ -147,13 +147,13 @@ class TitlePersistenceTests {
         Long[] ids = tx.execute(status -> {
             Room first = rooms.save(new Room("ABC234"));
             Room second = rooms.save(new Room("DEF567"));
-            Title one = titles.save(new Title(987L, MediaType.MOVIE, "One"));
+            Title one = titles.save(new Title(987L, ContentType.MOVIES, "One"));
             one.setOverview("Persisted details");
             one.getCast().add("Actor");
-            Title two = titles.save(new Title(988L, MediaType.TV, "Two"));
+            Title two = titles.save(new Title(988L, ContentType.TV_SERIES, "Two"));
             deck.save(new RoomTitle(first, two, 1));
             deck.save(new RoomTitle(first, one, 0));
-            Title reused = titles.findByTmdbIdAndMediaType(987L, MediaType.MOVIE).orElseThrow();
+            Title reused = titles.findByTmdbIdAndMediaType(987L, ContentType.MOVIES).orElseThrow();
             deck.save(new RoomTitle(second, reused, 0));
             return new Long[]{first.getId(), second.getId(), one.getId(), two.getId()};
         });
@@ -187,7 +187,7 @@ class TitlePersistenceTests {
     @ValueSource(ints = {-1, 20})
     void positionsOutsideDeckRangeAreRejectedByMysql(int position) {
         Room room = rooms.save(new Room("ABC234"));
-        Title title = titles.save(new Title(123L, MediaType.MOVIE, "Movie"));
+        Title title = titles.save(new Title(123L, ContentType.MOVIES, "Movie"));
         assertMysqlError(3819, () -> deck.saveAndFlush(new RoomTitle(room, title, position)));
     }
 
@@ -195,7 +195,7 @@ class TitlePersistenceTests {
     void twentyCardsAreReturnedInStoredOrderIncludingBoundaryPositions() {
         Room room = rooms.save(new Room("ABC234"));
         for (int position = 19; position >= 0; position--) {
-            Title title = titles.save(new Title((long) position, MediaType.MOVIE, "Movie " + position));
+            Title title = titles.save(new Title((long) position, ContentType.MOVIES, "Movie " + position));
             deck.save(new RoomTitle(room, title, position));
         }
         deck.flush();
@@ -209,8 +209,8 @@ class TitlePersistenceTests {
     @Test
     void twoTitlesCannotOccupySamePositionInRoom() {
         Room room = rooms.save(new Room("ABC234"));
-        Title first = titles.save(new Title(123L, MediaType.MOVIE, "One"));
-        Title second = titles.save(new Title(124L, MediaType.MOVIE, "Two"));
+        Title first = titles.save(new Title(123L, ContentType.MOVIES, "One"));
+        Title second = titles.save(new Title(124L, ContentType.MOVIES, "Two"));
         deck.saveAndFlush(new RoomTitle(room, first, 0));
         assertThatThrownBy(() -> deck.saveAndFlush(new RoomTitle(room, second, 0)))
                 .isInstanceOf(DataIntegrityViolationException.class);
@@ -219,7 +219,7 @@ class TitlePersistenceTests {
     @Test
     void sameTitleCannotAppearTwiceInRoom() {
         Room room = rooms.save(new Room("ABC234"));
-        Title title = titles.save(new Title(123L, MediaType.MOVIE, "One"));
+        Title title = titles.save(new Title(123L, ContentType.MOVIES, "One"));
         deck.saveAndFlush(new RoomTitle(room, title, 0));
         assertThatThrownBy(() -> deck.saveAndFlush(new RoomTitle(room, title, 1)))
                 .isInstanceOf(DataIntegrityViolationException.class);
@@ -229,7 +229,7 @@ class TitlePersistenceTests {
     void deletingRoomRemovesOnlyItsDeckAndKeepsSharedTitle() {
         Room first = rooms.save(new Room("ABC234"));
         Room second = rooms.save(new Room("DEF567"));
-        Title title = titles.save(new Title(123L, MediaType.MOVIE, "One"));
+        Title title = titles.save(new Title(123L, ContentType.MOVIES, "One"));
         title.getGenres().add(new StoredGenre(28, "Action"));
         title.getCreators().add("Creator");
         title.getCast().add("Actor");
@@ -248,7 +248,7 @@ class TitlePersistenceTests {
 
     @Test
     void deletingUnreferencedTitleCleansItsCollections() {
-        Title title = new Title(123L, MediaType.TV, "Series");
+        Title title = new Title(123L, ContentType.TV_SERIES, "Series");
         title.getGenres().add(new StoredGenre(18, "Drama"));
         title.getCreators().add("Creator");
         title.getCast().add("Actor");
@@ -268,12 +268,12 @@ class TitlePersistenceTests {
         assertMysqlError(3819, () -> jdbc.update(
                 "insert into titles (tmdb_id, media_type, title) values (123, 'OTHER', 'Name')"));
         assertMysqlError(1364, () -> jdbc.update(
-                "insert into titles (tmdb_id, media_type) values (123, 'MOVIE')"));
+                "insert into titles (tmdb_id, media_type) values (123, 'MOVIES')"));
     }
 
     @Test
     void genreIdentityRemainsUniqueEvenIfNamesDiffer() {
-        Title title = new Title(123L, MediaType.MOVIE, "Movie");
+        Title title = new Title(123L, ContentType.MOVIES, "Movie");
         title.getGenres().add(new StoredGenre(18, "Drama"));
         title.getGenres().add(new StoredGenre(18, "Драма"));
         assertThatThrownBy(() -> titles.saveAndFlush(title))
@@ -282,7 +282,7 @@ class TitlePersistenceTests {
 
     @Test
     void unknownGenreNameIsNotInvented() {
-        Title title = new Title(123L, MediaType.MOVIE, "Movie");
+        Title title = new Title(123L, ContentType.MOVIES, "Movie");
         title.getGenres().add(new StoredGenre(999999, null));
         titles.saveAndFlush(title);
         entityManager.clear();

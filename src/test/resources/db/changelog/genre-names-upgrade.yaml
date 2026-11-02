@@ -1,0 +1,11 @@
+databaseChangeLog:
+  - include:
+      file: db/changelog/001-rooms-participants.yaml
+  - include:
+      file: db/changelog/002-participant-tokens.yaml
+  - include:
+      file: db/changelog/003-titles-room-deck.yaml
+  - include:
+      file: db/changelog/004-room-deck-build.yaml
+  - include:
+      file: db/changelog/005-title-genre-names.yaml

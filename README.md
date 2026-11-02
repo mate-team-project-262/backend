@@ -164,8 +164,9 @@ this migration.
 
 Migration `003-titles-room-deck.yaml` adds the shared `titles` catalog and
 `room_titles`. `Title` stores all card details; unavailable catalog details are
-nullable. `MediaType.MOVIE` and `MediaType.TV` identify the TMDB namespaces and
-are separate from room `ContentType` preferences. Money uses `Long`/`BIGINT`;
+nullable. Rooms, source models and titles share `ContentType.MOVIES` and
+`ContentType.TV_SERIES`. Migration 006 converts legacy title values without
+changing title IDs or room-deck links. Money uses `Long`/`BIGINT`;
 popularity and vote average use decimal values. `createdAt` uses a UTC instant.
 
 `title_genres` stores genre ID/name snapshots as a set; the ID remains unique
