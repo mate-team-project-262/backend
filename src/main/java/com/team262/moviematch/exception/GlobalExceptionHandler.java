@@ -6,6 +6,7 @@ import com.team262.moviematch.exception.ex.BadRequestException;
 import com.team262.moviematch.exception.ex.ConflictException;
 import com.team262.moviematch.exception.ex.ForbiddenException;
 import com.team262.moviematch.exception.ex.ExternalServiceException;
+import com.team262.moviematch.exception.ex.DeckBuildException;
 import com.team262.moviematch.exception.ex.NotFoundException;
 import com.team262.moviematch.exception.ex.UnauthorizedException;
 import java.util.List;
@@ -90,6 +91,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleExternalServiceException(ExternalServiceException ex) {
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(buildErrorResponse(
                 ex.getCode().name(), "TMDB is unavailable", List.of()));
+    }
+
+    @ExceptionHandler(DeckBuildException.class)
+    public ResponseEntity<ErrorResponse> handleDeckBuildException(DeckBuildException ex) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(
+                buildErrorResponse(ex.getCode().name(), ex.getMessage(), List.of()));
     }
 
     private ErrorResponse buildErrorResponse(

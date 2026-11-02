@@ -40,9 +40,9 @@ public class Title {
     private Long tmdbId;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "media_type", nullable = false, length = 8, updatable = false)
+    @Column(name = "media_type", nullable = false, length = 16, updatable = false)
     @Setter(AccessLevel.NONE)
-    private MediaType mediaType;
+    private ContentType mediaType;
 
     @Column(nullable = false, length = 512)
     private String title;
@@ -67,11 +67,10 @@ public class Title {
 
     @ElementCollection
     @CollectionTable(name = "title_genres", joinColumns = @JoinColumn(name = "title_id"))
-    @Column(name = "genre_id", nullable = false)
     @Setter(AccessLevel.NONE)
-    private Set<Integer> genreIds = new HashSet<>();
+    private Set<StoredGenre> genres = new HashSet<>();
 
-    @Column(length = 512)
+    @Column(columnDefinition = "TEXT")
     private String director;
 
     @ElementCollection
@@ -104,7 +103,7 @@ public class Title {
     protected Title() {
     }
 
-    public Title(Long tmdbId, MediaType mediaType, String title) {
+    public Title(Long tmdbId, ContentType mediaType, String title) {
         this.tmdbId = tmdbId;
         this.mediaType = mediaType;
         this.title = title;

@@ -6,7 +6,6 @@ import com.team262.moviematch.config.tmdb.TmdbProperties;
 import com.team262.moviematch.exception.ErrorCode;
 import com.team262.moviematch.exception.ex.ExternalServiceException;
 import com.team262.moviematch.model.ContentType;
-import com.team262.moviematch.model.MediaType;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.net.ConnectException;
@@ -70,12 +69,16 @@ class TmdbTitleSourceTest {
                 .andExpect(queryParam("with_runtime.lte", "120"))
                 .andExpect(queryParam("vote_count.gte", "100"))
                 .andRespond(withSuccess("""
-                        {"page":2,"results":[{"id":42,"%s":"Candidate",
+                        {"page":2,"total_pages":3,"total_results":41,"results":[{"id":42,"%s":"Candidate",
                         "%s":"2021-04-01","overview":"Story","poster_path":"/image.jpg",
                         "popularity":42.125,"ignored":"extra"}]}
                         """.formatted(nameField, dateField), APPLICATION_JSON));
-        assertThat(source.discover(type, new DiscoverFilters(Set.of(35, 18), 120, 100), 2))
-                .containsExactly(new TitleCandidate(42L, movie ? MediaType.MOVIE : MediaType.TV,
+        DiscoverPage result = source.discover(type, new DiscoverFilters(Set.of(35, 18), 120, 100), 2);
+        assertThat(result.page()).isEqualTo(2);
+        assertThat(result.totalPages()).isEqualTo(3);
+        assertThat(result.totalResults()).isEqualTo(41);
+        assertThat(result.items())
+                .containsExactly(new TitleCandidate(42L, movie ? ContentType.MOVIES : ContentType.TV_SERIES,
                         "Candidate", 2021, "Story", "/image.jpg", new java.math.BigDecimal("42.125")));
     }
 
@@ -84,8 +87,10 @@ class TmdbTitleSourceTest {
         server.expect(requestTo(startsWith("https://tmdb.example/3/discover/movie?")))
                 .andExpect(request -> assertThat(request.getURI().getQuery())
                         .doesNotContain("with_genres", "with_runtime.lte", "vote_count.gte"))
-                .andRespond(withSuccess("{\"results\":[]}", APPLICATION_JSON));
-        assertThat(source.discover(ContentType.MOVIES, null, 500)).isEmpty();
+                .andRespond(withSuccess(
+                        "{\"page\":500,\"total_pages\":0,\"total_results\":0,\"results\":[]}",
+                        APPLICATION_JSON));
+        assertThat(source.discover(ContentType.MOVIES, null, 500).items()).isEmpty();
     }
 
     @Test
@@ -95,7 +100,7 @@ class TmdbTitleSourceTest {
                 .andRespond(withSuccess(fixture("movie-details.json"), APPLICATION_JSON));
         TmdbTitle title = source.getDetails(ContentType.MOVIES, 550);
         assertThat(title.tmdbId()).isEqualTo(550L);
-        assertThat(title.mediaType()).isEqualTo(MediaType.MOVIE);
+        assertThat(title.mediaType()).isEqualTo(ContentType.MOVIES);
         assertThat(title.title()).isEqualTo("Example Movie");
         assertThat(title.releaseYear()).isEqualTo(2024);
         assertThat(title.overview()).isEqualTo("A complete movie overview.");
@@ -120,7 +125,7 @@ class TmdbTitleSourceTest {
                 .andRespond(withSuccess(fixture("tv-details.json"), APPLICATION_JSON));
         TmdbTitle title = source.getDetails(ContentType.TV_SERIES, 1396);
         assertThat(title.tmdbId()).isEqualTo(1396L);
-        assertThat(title.mediaType()).isEqualTo(MediaType.TV);
+        assertThat(title.mediaType()).isEqualTo(ContentType.TV_SERIES);
         assertThat(title.title()).isEqualTo("Example Series");
         assertThat(title.releaseYear()).isEqualTo(2022);
         assertThat(title.overview()).isEqualTo("A complete TV overview.");
@@ -272,6 +277,21 @@ class TmdbTitleSourceTest {
     private void expectDetails(String body) {
         server.expect(requestTo(startsWith("https://tmdb.example/3/")))
                 .andRespond(withSuccess(body, APPLICATION_JSON));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "{\"page\":1,\"results\":[]}",
+            "{\"page\":2,\"total_pages\":2,\"total_results\":30,\"results\":[]}",
+            "{\"page\":1,\"total_pages\":-1,\"total_results\":0,\"results\":[]}",
+            "{\"page\":1,\"total_pages\":1,\"total_results\":-1,\"results\":[]}",
+            "{\"page\":1,\"total_pages\":\"bad\",\"total_results\":0,\"results\":[]}"
+    })
+    void invalidPaginationIsAnUpstreamFailure(String body) {
+        server.expect(requestTo(startsWith("https://tmdb.example/3/discover/")))
+                .andRespond(withSuccess(body, APPLICATION_JSON));
+        assertThatThrownBy(() -> source.discover(ContentType.MOVIES, null, 1))
+                .isInstanceOf(ExternalServiceException.class);
     }
 
     private String fixture(String name) throws IOException {

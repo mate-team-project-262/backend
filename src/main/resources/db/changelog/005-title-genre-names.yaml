@@ -1,0 +1,50 @@
+databaseChangeLog:
+  - changeSet:
+      id: 005-title-genre-names
+      author: team262
+      changes:
+        - addColumn:
+            tableName: title_genres
+            columns:
+              - column:
+                  name: genre_name
+                  type: VARCHAR(512)
+        # Canonical en-US movie/TV genre names verified against TMDB on 2026-11-02.
+        # Unknown legacy IDs remain null; migration never calls an external service.
+        - sql:
+            dbms: mysql
+            sql: >-
+              UPDATE title_genres SET genre_name = CASE genre_id
+                WHEN 12 THEN 'Adventure'
+                WHEN 14 THEN 'Fantasy'
+                WHEN 16 THEN 'Animation'
+                WHEN 18 THEN 'Drama'
+                WHEN 27 THEN 'Horror'
+                WHEN 28 THEN 'Action'
+                WHEN 35 THEN 'Comedy'
+                WHEN 36 THEN 'History'
+                WHEN 37 THEN 'Western'
+                WHEN 53 THEN 'Thriller'
+                WHEN 80 THEN 'Crime'
+                WHEN 99 THEN 'Documentary'
+                WHEN 878 THEN 'Science Fiction'
+                WHEN 9648 THEN 'Mystery'
+                WHEN 10402 THEN 'Music'
+                WHEN 10749 THEN 'Romance'
+                WHEN 10751 THEN 'Family'
+                WHEN 10752 THEN 'War'
+                WHEN 10759 THEN 'Action & Adventure'
+                WHEN 10762 THEN 'Kids'
+                WHEN 10763 THEN 'News'
+                WHEN 10764 THEN 'Reality'
+                WHEN 10765 THEN 'Sci-Fi & Fantasy'
+                WHEN 10766 THEN 'Soap'
+                WHEN 10767 THEN 'Talk'
+                WHEN 10768 THEN 'War & Politics'
+                WHEN 10770 THEN 'TV Movie'
+                ELSE NULL END
+              WHERE genre_name IS NULL
+      rollback:
+        - dropColumn:
+            tableName: title_genres
+            columnName: genre_name

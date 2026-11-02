@@ -2,7 +2,6 @@ package com.team262.moviematch.source;
 
 import com.team262.moviematch.exception.ex.ExternalServiceException;
 import com.team262.moviematch.model.ContentType;
-import com.team262.moviematch.model.MediaType;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -20,18 +19,18 @@ class StubTitleSourceTest {
     @ParameterizedTest
     @EnumSource(ContentType.class)
     void providesMoreThanTwentyCompleteCardsWithStablePages(ContentType type) {
-        List<TitleCandidate> first = source.discover(type, null, 1);
-        List<TitleCandidate> second = source.discover(type, null, 2);
+        List<TitleCandidate> first = source.discover(type, null, 1).items();
+        List<TitleCandidate> second = source.discover(type, null, 2).items();
         assertThat(first).hasSize(20);
         assertThat(second).hasSize(4);
-        assertThat(source.discover(type, null, 3)).isEmpty();
-        assertThat(new StubTitleSource().discover(type, null, 1)).isEqualTo(first);
+        assertThat(source.discover(type, null, 3).items()).isEmpty();
+        assertThat(new StubTitleSource().discover(type, null, 1).items()).isEqualTo(first);
         Set<Long> ids = new HashSet<>();
         java.util.stream.Stream.concat(first.stream(), second.stream()).forEach(candidate -> {
             assertThat(ids.add(candidate.tmdbId())).isTrue();
             TmdbTitle title = source.getDetails(type, candidate.tmdbId());
             assertThat(title.candidate()).isEqualTo(candidate);
-            assertThat(title.mediaType()).isEqualTo(type == ContentType.MOVIES ? MediaType.MOVIE : MediaType.TV);
+            assertThat(title.mediaType()).isEqualTo(type);
             assertThat(title.title()).isNotBlank();
             assertThat(title.releaseYear()).isPositive();
             assertThat(title.overview()).isNotBlank();
@@ -57,9 +56,9 @@ class StubTitleSourceTest {
     @EnumSource(ContentType.class)
     void honorsAllFiltersBeforePagination(ContentType type) {
         DiscoverFilters filters = new DiscoverFilters(Set.of(18, 35), 120, 1000);
-        List<TitleCandidate> actual = source.discover(type, filters, 1);
+        List<TitleCandidate> actual = source.discover(type, filters, 1).items();
         List<TitleCandidate> expected = java.util.stream.Stream.concat(
-                        source.discover(type, null, 1).stream(), source.discover(type, null, 2).stream())
+                        source.discover(type, null, 1).items().stream(), source.discover(type, null, 2).items().stream())
                 .filter(candidate -> {
                     TmdbTitle title = source.getDetails(type, candidate.tmdbId());
                     int index = (int) (candidate.tmdbId()
@@ -68,9 +67,9 @@ class StubTitleSourceTest {
                             && title.runtimeMinutes() <= 120 && (200 + index * 100) >= 1000;
                 }).toList();
         assertThat(actual).isNotEmpty().isEqualTo(expected);
-        assertThat(source.discover(type, new DiscoverFilters(Set.of(99999), null, null), 1)).isEmpty();
-        assertThat(source.discover(type, new DiscoverFilters(null, null, Integer.MAX_VALUE), 1)).isEmpty();
-        assertThat(source.discover(type, new DiscoverFilters(null, 1, null), 1)).isEmpty();
+        assertThat(source.discover(type, new DiscoverFilters(Set.of(99999), null, null), 1).items()).isEmpty();
+        assertThat(source.discover(type, new DiscoverFilters(null, null, Integer.MAX_VALUE), 1).items()).isEmpty();
+        assertThat(source.discover(type, new DiscoverFilters(null, 1, null), 1).items()).isEmpty();
     }
 
     @Test

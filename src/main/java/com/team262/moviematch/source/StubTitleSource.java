@@ -2,7 +2,6 @@ package com.team262.moviematch.source;
 
 import com.team262.moviematch.exception.ex.ExternalServiceException;
 import com.team262.moviematch.model.ContentType;
-import com.team262.moviematch.model.MediaType;
 import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.List;
@@ -23,17 +22,17 @@ public class StubTitleSource implements TitleSource {
     private final List<DemoTitle> catalog;
 
     public StubTitleSource() {
-        catalog = java.util.Arrays.stream(MediaType.values())
+        catalog = java.util.Arrays.stream(ContentType.values())
                 .flatMap(type -> IntStream.range(0, NAMES.size()).mapToObj(index -> create(type, index)))
                 .toList();
     }
 
     @Override
-    public List<TitleCandidate> discover(ContentType contentType, DiscoverFilters filters, int page) {
-        MediaType type = TitleSourceSupport.mediaType(contentType);
+    public DiscoverPage discover(ContentType contentType, DiscoverFilters filters, int page) {
+        ContentType type = java.util.Objects.requireNonNull(contentType, "contentType");
         TitleSourceSupport.checkPage(page);
         DiscoverFilters effective = TitleSourceSupport.filtersOrEmpty(filters);
-        return catalog.stream()
+        List<TitleCandidate> filtered = catalog.stream()
                 .filter(entry -> entry.title().mediaType() == type)
                 .filter(entry -> entry.title().genres().stream().map(TitleGenre::id)
                         .collect(java.util.stream.Collectors.toSet()).containsAll(effective.genreIds()))
@@ -43,21 +42,24 @@ public class StubTitleSource implements TitleSource {
                         || entry.voteCount() >= effective.minVoteCount())
                 .sorted(Comparator.comparing((DemoTitle entry) -> entry.title().popularity()).reversed()
                         .thenComparing(entry -> entry.title().tmdbId()))
-                .skip((long) (page - 1) * PAGE_SIZE).limit(PAGE_SIZE)
                 .map(entry -> entry.title().candidate()).toList();
+        int start = Math.min((page - 1) * PAGE_SIZE, filtered.size());
+        int end = Math.min(start + PAGE_SIZE, filtered.size());
+        return new DiscoverPage(filtered.subList(start, end), page,
+                (filtered.size() + PAGE_SIZE - 1) / PAGE_SIZE, filtered.size());
     }
 
     @Override
     public TmdbTitle getDetails(ContentType contentType, long tmdbId) {
-        MediaType type = TitleSourceSupport.mediaType(contentType);
+        ContentType type = java.util.Objects.requireNonNull(contentType, "contentType");
         TitleSourceSupport.checkId(tmdbId);
         return catalog.stream().map(DemoTitle::title)
                 .filter(title -> title.mediaType() == type && title.tmdbId() == tmdbId)
                 .findFirst().orElseThrow(ExternalServiceException::new);
     }
 
-    private DemoTitle create(MediaType type, int index) {
-        boolean movie = type == MediaType.MOVIE;
+    private DemoTitle create(ContentType type, int index) {
+        boolean movie = type == ContentType.MOVIES;
         TitleGenre mainGenre = switch (index % 3) {
             case 0 -> new TitleGenre(movie ? 28 : 10759, movie ? "Action" : "Action & Adventure");
             case 1 -> new TitleGenre(35, "Comedy");
