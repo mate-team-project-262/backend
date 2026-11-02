@@ -19,7 +19,17 @@ final class TmdbTitleMapper {
         this.certificationCountry = certificationCountry;
     }
 
-    List<TitleCandidate> candidates(JsonNode response, MediaType type) {
+    DiscoverPage page(JsonNode response, MediaType type, int requestedPage) {
+        Integer page = integer(response, "page");
+        Integer totalPages = integer(response, "total_pages");
+        Long totalResults = number(response, "total_results");
+        if (page == null || page != requestedPage || totalPages == null || totalResults == null) {
+            throw new IllegalArgumentException("Missing or inconsistent discover pagination");
+        }
+        return new DiscoverPage(candidates(response, type), page, totalPages, totalResults);
+    }
+
+    private List<TitleCandidate> candidates(JsonNode response, MediaType type) {
         if (!response.path("results").isArray()) {
             throw new IllegalArgumentException("Missing discover results");
         }

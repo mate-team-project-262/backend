@@ -210,3 +210,11 @@ See [source configuration, field mapping and tests](docs/title-sources.md).
 These are internal source models; no new public API DTOs or deck endpoints are added.
 
 Never commit `.env` files or real credentials. `.env.example` contains placeholders only.
+
+## Random room deck preparation
+
+`RoomDeckService` samples TMDB pages, validates 20 cards and atomically stores
+their details and room order. Repeated requests reuse the saved deck. Calls run
+sequentially on the caller thread, with request budgets and bounded HTTP bodies.
+The service is internal; room-start HTTP integration is a separate step.
+See [algorithm, limits, concurrency and verification](docs/room-decks.md).

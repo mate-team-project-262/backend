@@ -59,7 +59,7 @@ class TitlePersistenceTests {
         assertThat(jdbc.queryForList("show tables", String.class))
                 .contains("titles", "room_titles", "title_genres", "title_creators", "title_cast");
         Integer before = jdbc.queryForObject("select count(*) from DATABASECHANGELOG", Integer.class);
-        assertThat(before).isEqualTo(3);
+        assertThat(before).isEqualTo(4);
         liquibase.afterPropertiesSet();
         assertThat(jdbc.queryForObject("select count(*) from DATABASECHANGELOG", Integer.class))
                 .isEqualTo(before);

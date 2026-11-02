@@ -6,7 +6,7 @@ S2-2 repositories to persist selected cards.
 
 ```java
 List<TitleCandidate> candidates = titleSource.discover(
-        ContentType.MOVIES, new DiscoverFilters(Set.of(18), 120, 100), 1);
+        ContentType.MOVIES, new DiscoverFilters(Set.of(18), 120, 100), 1).items();
 TmdbTitle details = titleSource.getDetails(ContentType.MOVIES, candidates.getFirst().tmdbId());
 ```
 
@@ -39,6 +39,9 @@ Spring context exposes exactly one `TitleSource`.
 - `minVoteCount` becomes `vote_count.gte`; null omits the filter and zero is valid.
 - Pages are 1-based, from 1 through 500. Results preserve the provider's
   `popularity.desc` order. An empty provider page returns an empty list.
+- Discover returns `DiscoverPage(items, page, totalPages, totalResults)`.
+  Missing/inconsistent pagination and pages containing more than 20 candidates
+  are rejected as invalid provider responses. Stub supplies the same metadata.
 - Adult titles are excluded. IDs are positive `Long` values.
 - Internal invalid arguments fail before making a provider request. These are not
   public request-validation DTOs.
@@ -84,7 +87,9 @@ handler returns HTTP **502** with this existing error shape:
 ```
 
 No upstream response body, token or exception text is included in the HTTP response.
-No automatic retries are performed. Missing optional metadata is valid, rather than
+HTTP bodies are bounded by `TMDB_MAX_RESPONSE_BYTES` (4 MiB by default), including
+responses without Content-Length. Oversized responses are rejected before JSON
+mapping. No automatic retries are performed. Missing optional metadata is valid, rather than
 an external failure. Invalid shapes for known fields are treated as provider failures.
 
 ## Offline demo
@@ -103,8 +108,8 @@ Unknown detail IDs fail with the same unavailable exception as provider failures
 The two generic poster assets are under `/demo/poster-movie.svg` and
 `/demo/poster-tv.svg`; they do not require an external image service.
 
-The source is ready for the deck service to consume. This task does not add deck
-generation endpoints, persistence orchestration or frontend screens.
+The source is consumed by the internal [room deck service](room-decks.md).
+Public deck endpoints and frontend screens remain separate integration tasks.
 
 ## Tests
 

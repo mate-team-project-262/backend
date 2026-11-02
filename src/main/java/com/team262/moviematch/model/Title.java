@@ -71,7 +71,7 @@ public class Title {
     @Setter(AccessLevel.NONE)
     private Set<Integer> genreIds = new HashSet<>();
 
-    @Column(length = 512)
+    @Column(columnDefinition = "TEXT")
     private String director;
 
     @ElementCollection

@@ -7,7 +7,6 @@ import com.team262.moviematch.exception.ex.ExternalServiceException;
 import com.team262.moviematch.model.ContentType;
 import com.team262.moviematch.model.MediaType;
 import java.net.URI;
-import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -32,7 +31,7 @@ public class TmdbTitleSource implements TitleSource {
     }
 
     @Override
-    public List<TitleCandidate> discover(ContentType contentType, DiscoverFilters filters, int page) {
+    public DiscoverPage discover(ContentType contentType, DiscoverFilters filters, int page) {
         MediaType mediaType = TitleSourceSupport.mediaType(contentType);
         TitleSourceSupport.checkPage(page);
         DiscoverFilters effective = TitleSourceSupport.filtersOrEmpty(filters);
@@ -52,7 +51,7 @@ public class TmdbTitleSource implements TitleSource {
         }
         JsonNode response = client.get("/discover/" + path(mediaType), query);
         try {
-            return mapper.candidates(response, mediaType);
+            return mapper.page(response, mediaType, page);
         } catch (IllegalArgumentException ex) {
             throw new ExternalServiceException(ex);
         }

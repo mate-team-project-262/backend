@@ -8,3 +8,6 @@ databaseChangeLog:
   - include:
       file: 003-titles-room-deck.yaml
       relativeToChangelogFile: true
+  - include:
+      file: 004-room-deck-build.yaml
+      relativeToChangelogFile: true

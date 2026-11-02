@@ -29,11 +29,11 @@ public class StubTitleSource implements TitleSource {
     }
 
     @Override
-    public List<TitleCandidate> discover(ContentType contentType, DiscoverFilters filters, int page) {
+    public DiscoverPage discover(ContentType contentType, DiscoverFilters filters, int page) {
         MediaType type = TitleSourceSupport.mediaType(contentType);
         TitleSourceSupport.checkPage(page);
         DiscoverFilters effective = TitleSourceSupport.filtersOrEmpty(filters);
-        return catalog.stream()
+        List<TitleCandidate> filtered = catalog.stream()
                 .filter(entry -> entry.title().mediaType() == type)
                 .filter(entry -> entry.title().genres().stream().map(TitleGenre::id)
                         .collect(java.util.stream.Collectors.toSet()).containsAll(effective.genreIds()))
@@ -43,8 +43,11 @@ public class StubTitleSource implements TitleSource {
                         || entry.voteCount() >= effective.minVoteCount())
                 .sorted(Comparator.comparing((DemoTitle entry) -> entry.title().popularity()).reversed()
                         .thenComparing(entry -> entry.title().tmdbId()))
-                .skip((long) (page - 1) * PAGE_SIZE).limit(PAGE_SIZE)
                 .map(entry -> entry.title().candidate()).toList();
+        int start = Math.min((page - 1) * PAGE_SIZE, filtered.size());
+        int end = Math.min(start + PAGE_SIZE, filtered.size());
+        return new DiscoverPage(filtered.subList(start, end), page,
+                (filtered.size() + PAGE_SIZE - 1) / PAGE_SIZE, filtered.size());
     }
 
     @Override
