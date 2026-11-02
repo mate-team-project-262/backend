@@ -79,6 +79,15 @@ Migration `004` adds the durable build state, backfills complete decks as
 ready, and widens `titles.director` to `TEXT` for long TV credit lists.
 Rolling that column back to `VARCHAR(512)` requires existing values to fit.
 
+Migration `005` adds `title_genres.genre_name` without changing the unique
+`(title_id, genre_id)` identity. `Title.genres` stores `StoredGenre(id, name)`
+snapshots, so ID and name can be read from the database without TMDB calls.
+New details preserve the provider's localized genre names; missing names stay
+null. Existing known movie/TV genre IDs receive canonical en-US names verified
+against TMDB on 2026-11-02. Unknown legacy IDs are kept with a null name.
+The migration contains no network calls. Rolling it back preserves genre IDs
+but removes the newly stored names. Room filter preferences still store IDs.
+
 ## Errors and verification
 
 * `502 TMDB_UNAVAILABLE`: upstream transport, response or payload failure.

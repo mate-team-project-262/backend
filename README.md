@@ -168,7 +168,10 @@ nullable. `MediaType.MOVIE` and `MediaType.TV` identify the TMDB namespaces and
 are separate from room `ContentType` preferences. Money uses `Long`/`BIGINT`;
 popularity and vote average use decimal values. `createdAt` uses a UTC instant.
 
-`title_genres` stores numeric genre IDs as a set. `title_creators` and
+`title_genres` stores genre ID/name snapshots as a set; the ID remains unique
+within each title. Migration 005 backfills known legacy IDs with English names
+and retains unknown IDs with a null name. New names come from TMDB details.
+Room preferences continue to store genre IDs only. `title_creators` and
 `title_cast` store names as ordered lists, including repeated names. Collections
 are lazy and should be read inside a transaction when assembling card details.
 

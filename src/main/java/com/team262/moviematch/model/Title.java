@@ -67,9 +67,8 @@ public class Title {
 
     @ElementCollection
     @CollectionTable(name = "title_genres", joinColumns = @JoinColumn(name = "title_id"))
-    @Column(name = "genre_id", nullable = false)
     @Setter(AccessLevel.NONE)
-    private Set<Integer> genreIds = new HashSet<>();
+    private Set<StoredGenre> genres = new HashSet<>();
 
     @Column(columnDefinition = "TEXT")
     private String director;

@@ -11,3 +11,6 @@ databaseChangeLog:
   - include:
       file: 004-room-deck-build.yaml
       relativeToChangelogFile: true
+  - include:
+      file: 005-title-genre-names.yaml
+      relativeToChangelogFile: true

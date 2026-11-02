@@ -95,7 +95,7 @@ class RoomDeckIntegrationTest {
                     .containsExactlyElementsOf(IntStream.range(0, 20).boxed().toList());
             var card = deck.getFirst().getTitle();
             assertThat(card.getOverview()).isEqualTo("Overview");
-            assertThat(card.getGenreIds()).containsExactly(18);
+            assertThat(card.getGenres()).containsExactly(new com.team262.moviematch.model.StoredGenre(18, "Drama"));
             assertThat(card.getCast()).containsExactly("Actor A", "Actor B");
             assertThat(card.getCreators()).containsExactly("Creator");
             assertThat(card.getDirector()).isEqualTo("Director");
@@ -258,6 +258,28 @@ class RoomDeckIntegrationTest {
         assertThat(decks.count()).isZero();
         assertThat(source.detailCalls.get()).isZero();
     }
+    @Test
+    void aNewRoomCanRefreshGenreNamesWithoutDuplicatingTitlesOrGenres() {
+        Fixture first = fixture("ABC234");
+        List<Long> ids = service.prepare("ABC234", first.host().getId());
+        Fixture second = fixture("DEF567");
+        source.detail = id -> {
+            TmdbTitle card = DeckCandidateSelectorTest.card(id, MediaType.MOVIE, 90);
+            return new TmdbTitle(card.tmdbId(), card.mediaType(), card.title(), card.releaseYear(),
+                    card.overview(), card.posterPath(), card.popularity(), card.voteAverage(),
+                    card.runtimeMinutes(), List.of(new com.team262.moviematch.source.TitleGenre(18, "Драма")),
+                    card.director(), card.creators(), card.cast(), card.ageRating(), card.budget(),
+                    card.revenue(), card.originalLanguage());
+        };
+        assertThat(service.prepare("DEF567", second.host().getId()))
+                .containsExactlyInAnyOrderElementsOf(ids);
+        assertThat(titles.count()).isEqualTo(20);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM title_genres", Integer.class)).isEqualTo(20);
+        new TransactionTemplate(transactions).executeWithoutResult(status ->
+                assertThat(titles.findById(ids.getFirst()).orElseThrow().getGenres())
+                        .containsExactly(new com.team262.moviematch.model.StoredGenre(18, "Драма")));
+    }
+
     private Fixture fixture(String code) {
         return new TransactionTemplate(transactions).execute(status -> {
             Room room = rooms.saveAndFlush(new Room(code));
