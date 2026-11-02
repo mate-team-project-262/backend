@@ -1,10 +1,10 @@
 package com.team262.moviematch.source;
 
-import com.team262.moviematch.model.MediaType;
+import com.team262.moviematch.model.ContentType;
 import java.math.BigDecimal;
 import java.util.List;
 
-public record TmdbTitle(Long tmdbId, MediaType mediaType, String title, Integer releaseYear,
+public record TmdbTitle(Long tmdbId, ContentType mediaType, String title, Integer releaseYear,
                         String overview, String posterPath, BigDecimal popularity,
                         BigDecimal voteAverage, Integer runtimeMinutes, List<TitleGenre> genres,
                         String director, List<String> creators, List<String> cast, String ageRating,

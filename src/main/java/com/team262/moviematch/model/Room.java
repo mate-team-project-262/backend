@@ -16,6 +16,8 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 import org.hibernate.proxy.HibernateProxy;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 @Table(name = "rooms")
@@ -40,6 +42,12 @@ public class Room {
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt = Instant.now();
+
+    @Getter
+    @Setter
+    @Enumerated(EnumType.STRING)
+    @Column(name = "deck_build_status", nullable = false, length = 16)
+    private DeckBuildStatus deckBuildStatus = DeckBuildStatus.IDLE;
 
     @ElementCollection
     @CollectionTable(name = "room_genres", joinColumns = @JoinColumn(name = "room_id"))

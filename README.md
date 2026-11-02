@@ -164,11 +164,15 @@ this migration.
 
 Migration `003-titles-room-deck.yaml` adds the shared `titles` catalog and
 `room_titles`. `Title` stores all card details; unavailable catalog details are
-nullable. `MediaType.MOVIE` and `MediaType.TV` identify the TMDB namespaces and
-are separate from room `ContentType` preferences. Money uses `Long`/`BIGINT`;
+nullable. Rooms, source models and titles share `ContentType.MOVIES` and
+`ContentType.TV_SERIES`. Migration 006 converts legacy title values without
+changing title IDs or room-deck links. Money uses `Long`/`BIGINT`;
 popularity and vote average use decimal values. `createdAt` uses a UTC instant.
 
-`title_genres` stores numeric genre IDs as a set. `title_creators` and
+`title_genres` stores genre ID/name snapshots as a set; the ID remains unique
+within each title. Migration 005 backfills known legacy IDs with English names
+and retains unknown IDs with a null name. New names come from TMDB details.
+Room preferences continue to store genre IDs only. `title_creators` and
 `title_cast` store names as ordered lists, including repeated names. Collections
 are lazy and should be read inside a transaction when assembling card details.
 
@@ -210,3 +214,12 @@ See [source configuration, field mapping and tests](docs/title-sources.md).
 These are internal source models; no new public API DTOs or deck endpoints are added.
 
 Never commit `.env` files or real credentials. `.env.example` contains placeholders only.
+
+## Random room deck preparation
+
+`RoomDeckService` samples TMDB pages, validates 20 cards and stores their details
+and room order in one `@Transactional` operation using JPA `saveAll()`.
+Repeated requests reuse the saved deck. Calls run sequentially on the caller
+thread, with request budgets and bounded HTTP bodies.
+The service is internal; room-start HTTP integration is a separate step.
+See [algorithm, limits, concurrency and verification](docs/room-decks.md).

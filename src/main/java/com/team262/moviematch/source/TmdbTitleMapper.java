@@ -1,7 +1,7 @@
 package com.team262.moviematch.source;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.team262.moviematch.model.MediaType;
+import com.team262.moviematch.model.ContentType;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
@@ -19,18 +19,28 @@ final class TmdbTitleMapper {
         this.certificationCountry = certificationCountry;
     }
 
-    List<TitleCandidate> candidates(JsonNode response, MediaType type) {
+    DiscoverPage page(JsonNode response, ContentType type, int requestedPage) {
+        Integer page = integer(response, "page");
+        Integer totalPages = integer(response, "total_pages");
+        Long totalResults = number(response, "total_results");
+        if (page == null || page != requestedPage || totalPages == null || totalResults == null) {
+            throw new IllegalArgumentException("Missing or inconsistent discover pagination");
+        }
+        return new DiscoverPage(candidates(response, type), page, totalPages, totalResults);
+    }
+
+    private List<TitleCandidate> candidates(JsonNode response, ContentType type) {
         if (!response.path("results").isArray()) {
             throw new IllegalArgumentException("Missing discover results");
         }
         return array(response.get("results")).stream().map(node -> new TitleCandidate(
-                requiredId(node), type, text(node, type == MediaType.MOVIE ? "title" : "name"),
+                requiredId(node), type, text(node, type == ContentType.MOVIES ? "title" : "name"),
                 year(node, type), text(node, "overview"), text(node, "poster_path"),
                 decimal(node, "popularity"))).toList();
     }
 
-    TmdbTitle details(JsonNode node, MediaType type) {
-        boolean movie = type == MediaType.MOVIE;
+    TmdbTitle details(JsonNode node, ContentType type) {
+        boolean movie = type == ContentType.MOVIES;
         JsonNode credits = node.path(movie ? "credits" : "aggregate_credits");
         checkAppendedResponse(credits);
         List<TitleGenre> genres = array(node.path("genres")).stream()
@@ -121,8 +131,8 @@ final class TmdbTitleMapper {
                 .filter(Objects::nonNull).toList();
     }
 
-    private Integer year(JsonNode node, MediaType type) {
-        String date = text(node, type == MediaType.MOVIE ? "release_date" : "first_air_date");
+    private Integer year(JsonNode node, ContentType type) {
+        String date = text(node, type == ContentType.MOVIES ? "release_date" : "first_air_date");
         if (date == null) {
             return null;
         }
