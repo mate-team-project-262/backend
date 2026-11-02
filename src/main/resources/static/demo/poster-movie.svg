@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="600" viewBox="0 0 400 600">
+  <rect width="400" height="600" fill="#12202e"/>
+  <circle cx="270" cy="190" r="120" fill="#e8b86d"/>
+  <path d="M0 400 130 210 260 440 350 330 400 420V600H0Z" fill="#263e50"/>
+  <text x="32" y="490" font-family="sans-serif" font-size="34" fill="#fff">MOVIE MATCH</text>
+  <text x="32" y="538" font-family="sans-serif" font-size="22" fill="#e8b86d">DEMO · MOVIE</text>
+</svg>

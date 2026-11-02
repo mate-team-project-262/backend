@@ -194,4 +194,19 @@ Run `mvn -Dtest=TitlePersistenceTests,RoomPersistenceTests test` with Docker to
 verify migrations, complete details, reads after commit in independent
 transactions, shared title reuse, ordering and MySQL constraints.
 
+## Sprint 2 card sources and TMDB (S2-1)
+
+`TitleSource` provides `discover(contentType, filters, page)` and
+`getDetails(contentType, tmdbId)` for movies and TV series. The default
+`TITLE_SOURCE=stub` supplies 24 fictional cards per content type with full
+details and local demo posters, without a TMDB key or network access.
+
+For live data set `TITLE_SOURCE=tmdb` and `TMDB_API_KEY` to a TMDB API Read Access
+Token (without the Bearer prefix). Connection/read timeouts default to 3s/5s.
+Missing catalog values stay null, missing lists stay empty, and upstream errors
+map to `502 TMDB_UNAVAILABLE`. The selected source never silently falls back.
+
+See [source configuration, field mapping and tests](docs/title-sources.md).
+These are internal source models; no new public API DTOs or deck endpoints are added.
+
 Never commit `.env` files or real credentials. `.env.example` contains placeholders only.
