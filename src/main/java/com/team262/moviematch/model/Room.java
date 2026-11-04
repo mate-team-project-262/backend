@@ -43,6 +43,9 @@ public class Room {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt = Instant.now();
 
+    @Column(name = "started_at")
+    private Instant startedAt;
+
     @Getter
     @Setter
     @Enumerated(EnumType.STRING)
@@ -107,6 +110,14 @@ public class Room {
 
     public Set<Integer> getGenreIds() {
         return genreIds;
+    }
+
+    public Instant getStartedAt() {
+        return startedAt;
+    }
+
+    public void setStartedAt(Instant startedAt) {
+        this.startedAt = startedAt;
     }
 
     @Override

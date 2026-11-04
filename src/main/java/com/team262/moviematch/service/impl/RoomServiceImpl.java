@@ -11,6 +11,7 @@ import com.team262.moviematch.exception.ex.ForbiddenException;
 import com.team262.moviematch.exception.ex.NotFoundException;
 import com.team262.moviematch.mapper.ParticipantMapper;
 import com.team262.moviematch.mapper.RoomMapper;
+import com.team262.moviematch.model.DeckBuildStatus;
 import com.team262.moviematch.model.Participant;
 import com.team262.moviematch.model.Room;
 import com.team262.moviematch.model.RoomStatus;
@@ -109,7 +110,7 @@ public class RoomServiceImpl implements RoomService {
     @Transactional
     public JoinRoomResponse joinRoom(String code, JoinRoomRequest request) {
 
-        Room room = roomRepository.findByCode(code).orElseThrow(
+        Room room = roomRepository.findByCodeForUpdate(code).orElseThrow(
                 () -> new NotFoundException(ErrorCode.ROOM_NOT_FOUND,
                         "Room with code " + code + " doesn't exist"));
 
@@ -148,14 +149,15 @@ public class RoomServiceImpl implements RoomService {
     }
 
     private void validateRoom(Room room) {
-        if (room.getStatus() != RoomStatus.LOBBY) {
+        if (room.getStatus() != RoomStatus.LOBBY
+                || room.getDeckBuildStatus() == DeckBuildStatus.BUILDING) {
             throw new ConflictException(ErrorCode.ROOM_NOT_JOINABLE,
                     "Room not in status LOBBY");
         }
         long participantsInRoom = participantRepository.countByRoom(room);
-        if (participantsInRoom >= 5) {
+        if (participantsInRoom >= maxParticipants) {
             throw new ConflictException(ErrorCode.ROOM_FULL,
-                    "Room has more than 5 participants");
+                    "Room has reached the participant limit of " + maxParticipants);
         }
     }
 }

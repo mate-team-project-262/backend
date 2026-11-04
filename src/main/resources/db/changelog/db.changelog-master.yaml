@@ -17,3 +17,6 @@ databaseChangeLog:
   - include:
       file: 006-title-content-type.yaml
       relativeToChangelogFile: true
+  - include:
+      file: 007-add-room-started-at.yaml
+      relativeToChangelogFile: true

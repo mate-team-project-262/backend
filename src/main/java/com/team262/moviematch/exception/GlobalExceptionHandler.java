@@ -4,15 +4,16 @@ import com.team262.moviematch.dto.error.ErrorResponse;
 import com.team262.moviematch.dto.error.FieldErrorResponse;
 import com.team262.moviematch.exception.ex.BadRequestException;
 import com.team262.moviematch.exception.ex.ConflictException;
-import com.team262.moviematch.exception.ex.ForbiddenException;
-import com.team262.moviematch.exception.ex.ExternalServiceException;
 import com.team262.moviematch.exception.ex.DeckBuildException;
+import com.team262.moviematch.exception.ex.ExternalServiceException;
+import com.team262.moviematch.exception.ex.ForbiddenException;
 import com.team262.moviematch.exception.ex.NotFoundException;
 import com.team262.moviematch.exception.ex.UnauthorizedException;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -97,6 +98,16 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleDeckBuildException(DeckBuildException ex) {
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(
                 buildErrorResponse(ex.getCode().name(), ex.getMessage(), List.of()));
+    }
+
+    @ExceptionHandler(MissingRequestHeaderException.class)
+    public ResponseEntity<ErrorResponse> handleMissingHeader(
+            MissingRequestHeaderException e) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(buildErrorResponse(
+                ErrorCode.INVALID_TOKEN.name(),
+                "Missing required header: " + e.getHeaderName(),
+                List.of()
+        ));
     }
 
     private ErrorResponse buildErrorResponse(
