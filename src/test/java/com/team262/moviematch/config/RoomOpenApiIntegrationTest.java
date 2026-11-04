@@ -51,7 +51,7 @@ class RoomOpenApiIntegrationTest {
         assertThat(spec.path("openapi").asText()).startsWith("3.0.");
         assertThat(spec.toString()).doesNotContainPattern("[\\p{IsCyrillic}]");
         JsonNode paths = spec.path("paths");
-        assertThat(paths.size()).isEqualTo(4);
+        assertThat(paths.size()).isEqualTo(6);
         JsonNode create = paths.path("/rooms").path("post");
         JsonNode lobby = paths.path("/rooms/{code}").path("get");
         JsonNode join = paths.path("/rooms/{code}/join").path("post");

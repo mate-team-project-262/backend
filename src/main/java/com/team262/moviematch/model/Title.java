@@ -22,6 +22,7 @@ import java.util.Set;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.proxy.HibernateProxy;
 
 @Entity
@@ -66,6 +67,7 @@ public class Title {
     private Integer runtimeMinutes;
 
     @ElementCollection
+    @BatchSize(size = 20)
     @CollectionTable(name = "title_genres", joinColumns = @JoinColumn(name = "title_id"))
     @Setter(AccessLevel.NONE)
     private Set<StoredGenre> genres = new HashSet<>();
@@ -74,6 +76,7 @@ public class Title {
     private String director;
 
     @ElementCollection
+    @BatchSize(size = 20)
     @CollectionTable(name = "title_creators", joinColumns = @JoinColumn(name = "title_id"))
     @OrderColumn(name = "position")
     @Column(name = "name", nullable = false, length = 512)
@@ -81,6 +84,7 @@ public class Title {
     private List<String> creators = new ArrayList<>();
 
     @ElementCollection
+    @BatchSize(size = 20)
     @CollectionTable(name = "title_cast", joinColumns = @JoinColumn(name = "title_id"))
     @OrderColumn(name = "position")
     @Column(name = "name", nullable = false, length = 512)
