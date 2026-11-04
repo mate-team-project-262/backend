@@ -1,0 +1,17 @@
+databaseChangeLog:
+  - changeSet:
+      id: 007-add-room-started-at
+      author: anton
+      changes:
+        - addColumn:
+            tableName: rooms
+            columns:
+              - column:
+                  name: started_at
+                  type: DATETIME(6)
+                  constraints:
+                    nullable: true
+      rollback:
+        - dropColumn:
+            tableName: rooms
+            columnName: started_at

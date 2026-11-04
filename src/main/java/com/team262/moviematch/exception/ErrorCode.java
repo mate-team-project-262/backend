@@ -6,7 +6,7 @@ public enum ErrorCode {
 
     // BadRequestException
     INVALID_PREFERENCES,
-    MOVIE_NOT_IN_DECK,
+    TITLE_NOT_IN_DECK,
 
     //UnauthorizedException
     INVALID_TOKEN,
@@ -23,6 +23,8 @@ public enum ErrorCode {
     ROOM_FULL,
     NAME_TAKEN,
     NOT_ENOUGH_TITLES,
+    NOT_ENOUGH_PARTICIPANTS,
+    ROOM_ALREADY_STARTED,
     ROOM_NOT_VOTING,
     ALREADY_VOTED,
     RESULT_NOT_READY,

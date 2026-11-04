@@ -12,6 +12,7 @@ import com.team262.moviematch.exception.ex.NotFoundException;
 import com.team262.moviematch.mapper.ParticipantMapper;
 import com.team262.moviematch.mapper.RoomMapper;
 import com.team262.moviematch.model.ContentType;
+import com.team262.moviematch.model.DeckBuildStatus;
 import com.team262.moviematch.model.Participant;
 import com.team262.moviematch.model.Room;
 import com.team262.moviematch.model.RoomStatus;
@@ -40,6 +41,7 @@ import org.springframework.transaction.support.SimpleTransactionStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -312,7 +314,7 @@ class RoomServiceTest {
                 null
         );
 
-        when(rooms.findByCode("K7M2QX"))
+        when(rooms.findByCodeForUpdate("K7M2QX"))
                 .thenReturn(Optional.of(room));
         when(participants.countByRoom(room)).thenReturn(1L);
         when(participants.existsByRoomAndNameIgnoreCase(room, "Guest"))
@@ -347,7 +349,7 @@ class RoomServiceTest {
 
     @Test
     void rejectsJoiningWhenRoomDoesNotExist() {
-        when(rooms.findByCode("K7M2QX"))
+        when(rooms.findByCodeForUpdate("K7M2QX"))
                 .thenReturn(Optional.empty());
 
         NotFoundException error = assertThrows(
@@ -368,7 +370,7 @@ class RoomServiceTest {
         Room room = room(1L);
         ReflectionTestUtils.setField(room, "status", RoomStatus.VOTING);
 
-        when(rooms.findByCode("K7M2QX"))
+        when(rooms.findByCodeForUpdate("K7M2QX"))
                 .thenReturn(Optional.of(room));
 
         ConflictException error = assertThrows(
@@ -389,7 +391,7 @@ class RoomServiceTest {
     void rejectsJoiningWhenRoomIsFull() {
         Room room = room(1L);
 
-        when(rooms.findByCode("K7M2QX"))
+        when(rooms.findByCodeForUpdate("K7M2QX"))
                 .thenReturn(Optional.of(room));
         when(participants.countByRoom(room)).thenReturn(5L);
 
@@ -413,7 +415,7 @@ class RoomServiceTest {
     void rejectsJoiningWhenDisplayNameIsAlreadyTaken() {
         Room room = room(1L);
 
-        when(rooms.findByCode("K7M2QX"))
+        when(rooms.findByCodeForUpdate("K7M2QX"))
                 .thenReturn(Optional.of(room));
         when(participants.countByRoom(room)).thenReturn(1L);
         when(participants.existsByRoomAndNameIgnoreCase(room, "guest"))
@@ -454,5 +456,18 @@ class RoomServiceTest {
                         name
                 )
         );
+    }
+
+    @Test
+    void join_whileDeckIsBuilding_isRejected() {
+        Room room = new Room("K7M2QX");
+        room.setDeckBuildStatus(DeckBuildStatus.BUILDING);
+        when(rooms.findByCodeForUpdate("K7M2QX")).thenReturn(Optional.of(room));
+
+        assertThatThrownBy(() -> service.joinRoom("K7M2QX",
+                new JoinRoomRequest("Egor")))
+                .isInstanceOfSatisfying(ConflictException.class,
+                        e -> assertThat(e.getCode())
+                                .isEqualTo(ErrorCode.ROOM_NOT_JOINABLE));
     }
 }
