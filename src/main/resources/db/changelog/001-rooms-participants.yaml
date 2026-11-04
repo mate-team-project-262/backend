@@ -1,0 +1,133 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-rooms-participants
+      author: team262
+      changes:
+        - createTable:
+            tableName: rooms
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_rooms
+                    nullable: false
+              - column:
+                  name: code
+                  type: VARCHAR(6) CHARACTER SET ascii COLLATE ascii_general_ci
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(16)
+                  defaultValue: LOBBY
+                  constraints:
+                    nullable: false
+              - column:
+                  name: content_type
+                  type: VARCHAR(16)
+                  defaultValue: MOVIES
+                  constraints:
+                    nullable: false
+              - column:
+                  name: max_duration_minutes
+                  type: INT
+              - column:
+                  name: created_at
+                  type: DATETIME(6)
+                  defaultValueComputed: CURRENT_TIMESTAMP(6)
+                  constraints:
+                    nullable: false
+        - addUniqueConstraint:
+            tableName: rooms
+            columnNames: code
+            constraintName: uk_rooms_code
+        - sql:
+            dbms: mysql
+            sql: >-
+              ALTER TABLE rooms
+              ADD CONSTRAINT ck_rooms_code CHECK
+              (REGEXP_LIKE(code, '^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{6}$', 'i')),
+              ADD CONSTRAINT ck_rooms_status CHECK
+              (CAST(status AS BINARY) IN ('LOBBY', 'VOTING', 'FINISHED')),
+              ADD CONSTRAINT ck_rooms_content_type CHECK
+              (CAST(content_type AS BINARY) IN ('MOVIES', 'TV_SERIES'))
+        - createIndex:
+            tableName: rooms
+            indexName: idx_rooms_created_at
+            columns:
+              - column:
+                  name: created_at
+        - createTable:
+            tableName: participants
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_participants
+                    nullable: false
+              - column:
+                  name: room_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: is_host
+                  type: BIT(1)
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+        - createIndex:
+            tableName: participants
+            indexName: idx_participants_room_id
+            columns:
+              - column:
+                  name: room_id
+        - addForeignKeyConstraint:
+            baseTableName: participants
+            baseColumnNames: room_id
+            referencedTableName: rooms
+            referencedColumnNames: id
+            constraintName: fk_participants_room
+            onDelete: CASCADE
+        - createTable:
+            tableName: room_genres
+            columns:
+              - column:
+                  name: room_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: genre_id
+                  type: INT
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            tableName: room_genres
+            columnNames: room_id, genre_id
+            constraintName: pk_room_genres
+        - addForeignKeyConstraint:
+            baseTableName: room_genres
+            baseColumnNames: room_id
+            referencedTableName: rooms
+            referencedColumnNames: id
+            constraintName: fk_room_genres_room
+            onDelete: CASCADE
+      rollback:
+        - dropTable:
+            tableName: room_genres
+        - dropTable:
+            tableName: participants
+        - dropTable:
+            tableName: rooms

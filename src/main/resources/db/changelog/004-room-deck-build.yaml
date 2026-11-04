@@ -1,0 +1,51 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-room-deck-build
+      author: team262
+      changes:
+        - modifyDataType:
+            tableName: titles
+            columnName: director
+            newDataType: TEXT
+        - addColumn:
+            tableName: rooms
+            columns:
+              - column:
+                  name: deck_build_status
+                  type: VARCHAR(16)
+                  defaultValue: IDLE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: deck_build_token
+                  type: VARCHAR(36)
+              - column:
+                  name: deck_build_expires_at
+                  type: DATETIME(6)
+        - sql:
+            dbms: mysql
+            sql: >-
+              UPDATE rooms r SET deck_build_status = 'READY'
+              WHERE (SELECT COUNT(*) FROM room_titles rt WHERE rt.room_id = r.id) = 20
+        - sql:
+            dbms: mysql
+            sql: >-
+              ALTER TABLE rooms ADD CONSTRAINT ck_rooms_deck_build_status
+              CHECK (CAST(deck_build_status AS BINARY) IN ('IDLE', 'BUILDING', 'READY', 'FAILED'))
+      rollback:
+        - modifyDataType:
+            tableName: titles
+            columnName: director
+            newDataType: VARCHAR(512)
+        - sql:
+            dbms: mysql
+            sql: ALTER TABLE rooms DROP CHECK ck_rooms_deck_build_status
+        - dropColumn:
+            tableName: rooms
+            columnName: deck_build_expires_at
+        - dropColumn:
+            tableName: rooms
+            columnName: deck_build_token
+        - dropColumn:
+            tableName: rooms
+            columnName: deck_build_status

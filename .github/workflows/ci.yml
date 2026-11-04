@@ -1,0 +1,37 @@
+name: Backend CI Pipeline
+
+on:
+  pull_request:
+    branches:
+      - develop
+      - main
+  push:
+    branches:
+      - develop
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  verify-and-build-docker:
+    name: Maven Verify (H2 Smoke Test) & Docker Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: 1. Checkout repository code
+        uses: actions/checkout@v4
+
+      - name: 2. Setup Java 21 LTS with Maven cache
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: 3. Run Maven verify (Context, Security & Liquibase H2 tests)
+        run: mvn clean verify -B
+
+      - name: 4. Verify production Docker image build
+        run: docker build -t team262-backend:${{ github.sha }} .

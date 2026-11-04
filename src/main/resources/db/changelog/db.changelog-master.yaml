@@ -1,0 +1,22 @@
+databaseChangeLog:
+  - include:
+      file: 001-rooms-participants.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: 002-participant-tokens.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: 003-titles-room-deck.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: 004-room-deck-build.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: 005-title-genre-names.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: 006-title-content-type.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: 007-add-room-started-at.yaml
+      relativeToChangelogFile: true

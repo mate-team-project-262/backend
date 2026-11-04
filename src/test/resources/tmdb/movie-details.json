@@ -1,0 +1,82 @@
+{
+  "id": 550,
+  "title": "Example Movie",
+  "release_date": "2024-06-14",
+  "overview": "A complete movie overview.",
+  "poster_path": "/movie.jpg",
+  "popularity": 123.456,
+  "vote_average": 8.25,
+  "runtime": 123,
+  "genres": [
+    {
+      "id": 18,
+      "name": "Drama"
+    },
+    {
+      "id": 35,
+      "name": "Comedy"
+    }
+  ],
+  "budget": 3000000000,
+  "revenue": 6000000000,
+  "original_language": "fr",
+  "credits": {
+    "crew": [
+      {
+        "job": "Writer",
+        "name": "A Writer"
+      },
+      {
+        "job": "Director",
+        "name": "A Director"
+      },
+      {
+        "job": "Director",
+        "name": "Another Director"
+      }
+    ],
+    "cast": [
+      {
+        "name": "Second Actor",
+        "order": 1
+      },
+      {
+        "name": "First Actor",
+        "order": 0
+      },
+      {
+        "name": "Unknown Order"
+      }
+    ]
+  },
+  "release_dates": {
+    "results": [
+      {
+        "iso_3166_1": "GB",
+        "release_dates": [
+          {
+            "type": 3,
+            "certification": "15"
+          }
+        ]
+      },
+      {
+        "iso_3166_1": "US",
+        "release_dates": [
+          {
+            "type": 4,
+            "certification": "R"
+          },
+          {
+            "type": 3,
+            "certification": ""
+          },
+          {
+            "type": 3,
+            "certification": "PG-13"
+          }
+        ]
+      }
+    ]
+  }
+}

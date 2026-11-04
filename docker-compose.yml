@@ -1,0 +1,66 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: team262_mysql
+    restart: unless-stopped
+    command: >
+      --default-authentication-plugin=mysql_native_password
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:?Set MYSQL_DATABASE in .env}
+      MYSQL_USER: ${MYSQL_USER:?Set MYSQL_USER in .env}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
+    ports:
+      - "127.0.0.1:${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - backend-net
+
+  backend:
+    profiles: ["app"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: team262_backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      TITLE_SOURCE: ${TITLE_SOURCE:-stub}
+      TMDB_API_KEY: ${TMDB_API_KEY:-}
+      TMDB_BASE_URL: ${TMDB_BASE_URL:-https://api.themoviedb.org/3}
+      TMDB_CONNECT_TIMEOUT: ${TMDB_CONNECT_TIMEOUT:-3s}
+      TMDB_READ_TIMEOUT: ${TMDB_READ_TIMEOUT:-5s}
+      TMDB_LANGUAGE: ${TMDB_LANGUAGE:-en-US}
+      TMDB_CERTIFICATION_COUNTRY: ${TMDB_CERTIFICATION_COUNTRY:-US}
+      TMDB_MAX_RESPONSE_BYTES: ${TMDB_MAX_RESPONSE_BYTES:-4194304}
+      DECK_MAX_PAGE_WINDOW: ${DECK_MAX_PAGE_WINDOW:-50}
+      DECK_INITIAL_PAGE_COUNT: ${DECK_INITIAL_PAGE_COUNT:-4}
+      DECK_MAX_DISCOVER_REQUESTS: ${DECK_MAX_DISCOVER_REQUESTS:-8}
+      DECK_MAX_DETAILS_REQUESTS: ${DECK_MAX_DETAILS_REQUESTS:-30}
+    ports:
+      - "8080:8080"
+    networks:
+      - backend-net
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  backend-net:
+    driver: bridge

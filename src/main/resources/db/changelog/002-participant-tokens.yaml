@@ -1,0 +1,59 @@
+
+databaseChangeLog:
+  - changeSet:
+      id: 002-participant-tokens
+      author: anton
+      changes:
+        - addColumn:
+            tableName: participants
+            columns:
+              - column:
+                  name: token
+                  type: VARCHAR(36)
+              - column:
+                  name: token_created_at
+                  type: DATETIME(6)
+
+        - sql:
+            dbms: mysql
+            sql: >-
+              UPDATE participants
+              SET token = UUID(),
+                  token_created_at = CURRENT_TIMESTAMP(6)
+              WHERE token IS NULL OR token_created_at IS NULL
+
+        - addNotNullConstraint:
+            tableName: participants
+            columnName: token
+            columnDataType: VARCHAR(36)
+
+        - addNotNullConstraint:
+            tableName: participants
+            columnName: token_created_at
+            columnDataType: DATETIME(6)
+
+        - addUniqueConstraint:
+            tableName: participants
+            columnNames: token
+            constraintName: uk_participants_token
+
+        - createIndex:
+            tableName: participants
+            indexName: idx_participants_token_created_at
+            columns:
+              - column:
+                  name: token_created_at
+
+      rollback:
+        - dropIndex:
+            tableName: participants
+            indexName: idx_participants_token_created_at
+        - dropUniqueConstraint:
+            tableName: participants
+            constraintName: uk_participants_token
+        - dropColumn:
+            tableName: participants
+            columnName: token_created_at
+        - dropColumn:
+            tableName: participants
+            columnName: token

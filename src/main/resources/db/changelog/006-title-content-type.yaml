@@ -1,0 +1,44 @@
+databaseChangeLog:
+  - changeSet:
+      id: 006-title-content-type
+      author: team262
+      changes:
+        - sql:
+            dbms: mysql
+            sql: ALTER TABLE titles DROP CHECK ck_titles_media_type
+        - modifyDataType:
+            tableName: titles
+            columnName: media_type
+            newDataType: VARCHAR(16)
+        - sql:
+            dbms: mysql
+            sql: >-
+              UPDATE titles SET media_type = CASE media_type
+                WHEN 'MOVIE' THEN 'MOVIES'
+                WHEN 'TV' THEN 'TV_SERIES'
+                ELSE media_type END
+        - sql:
+            dbms: mysql
+            sql: >-
+              ALTER TABLE titles ADD CONSTRAINT ck_titles_media_type
+              CHECK (CAST(media_type AS BINARY) IN ('MOVIES', 'TV_SERIES'))
+      rollback:
+        - sql:
+            dbms: mysql
+            sql: ALTER TABLE titles DROP CHECK ck_titles_media_type
+        - sql:
+            dbms: mysql
+            sql: >-
+              UPDATE titles SET media_type = CASE media_type
+                WHEN 'MOVIES' THEN 'MOVIE'
+                WHEN 'TV_SERIES' THEN 'TV'
+                ELSE media_type END
+        - modifyDataType:
+            tableName: titles
+            columnName: media_type
+            newDataType: VARCHAR(8)
+        - sql:
+            dbms: mysql
+            sql: >-
+              ALTER TABLE titles ADD CONSTRAINT ck_titles_media_type
+              CHECK (CAST(media_type AS BINARY) IN ('MOVIE', 'TV'))
