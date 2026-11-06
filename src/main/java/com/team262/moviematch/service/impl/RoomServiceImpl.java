@@ -17,6 +17,7 @@ import com.team262.moviematch.model.Room;
 import com.team262.moviematch.model.RoomStatus;
 import com.team262.moviematch.repository.ParticipantRepository;
 import com.team262.moviematch.repository.RoomRepository;
+import com.team262.moviematch.service.ParticipantAccessService;
 import com.team262.moviematch.service.ParticipantTokenService;
 import com.team262.moviematch.service.RoomService;
 import com.team262.moviematch.util.RoomCodeGenerator;
@@ -39,6 +40,7 @@ public class RoomServiceImpl implements RoomService {
     private final RoomRepository roomRepository;
     private final ParticipantRepository participantRepository;
     private final ParticipantTokenService tokenService;
+    private final ParticipantAccessService accessService;
     private final RoomCodeGenerator codeGenerator;
     private final RoomMapper mapper;
     private final ParticipantMapper participantMapper;
@@ -47,12 +49,14 @@ public class RoomServiceImpl implements RoomService {
 
     public RoomServiceImpl(RoomRepository roomRepository,
                            ParticipantRepository participantRepository,
-                           ParticipantTokenService tokenService, RoomCodeGenerator codeGenerator,
+                           ParticipantTokenService tokenService, ParticipantAccessService accessService,
+                           RoomCodeGenerator codeGenerator,
                            RoomMapper mapper, ParticipantMapper participantMapper, PlatformTransactionManager transactionManager,
                            @Value("${room.max-participants:5}") int maxParticipants) {
         this.roomRepository = roomRepository;
         this.participantRepository = participantRepository;
         this.tokenService = tokenService;
+        this.accessService = accessService;
         this.codeGenerator = codeGenerator;
         this.mapper = mapper;
         this.participantMapper = participantMapper;
@@ -107,6 +111,25 @@ public class RoomServiceImpl implements RoomService {
         return false;
     }
 
+    @Override
+    @Transactional
+    public void leaveRoom(String code, Participant participant) {
+        Participant leaving = accessService.requireRoomMembershipForUpdate(code, participant);
+        Room room = leaving.getRoom();
+        // Votes cascade from participants. The token is stored on the deleted row.
+        participantRepository.delete(leaving);
+        if (leaving.isHost()) {
+            Participant nextHost = participantRepository.findFirstByRoomIdAndIdNotOrderByIdAsc(
+                    room.getId(), leaving.getId()).orElse(null);
+            if (nextHost == null) {
+                roomRepository.delete(room);
+                return;
+            }
+            nextHost.setHost(true);
+        }
+    }
+
+    @Override
     @Transactional
     public JoinRoomResponse joinRoom(String code, JoinRoomRequest request) {
 
@@ -152,7 +175,7 @@ public class RoomServiceImpl implements RoomService {
         if (room.getStatus() != RoomStatus.LOBBY
                 || room.getDeckBuildStatus() == DeckBuildStatus.BUILDING) {
             throw new ConflictException(ErrorCode.ROOM_NOT_JOINABLE,
-                    "Room not in status LOBBY");
+                    "Joining is closed because the game has started or is starting");
         }
         long participantsInRoom = participantRepository.countByRoom(room);
         if (participantsInRoom >= maxParticipants) {

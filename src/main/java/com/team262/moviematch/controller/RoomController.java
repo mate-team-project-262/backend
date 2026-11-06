@@ -37,7 +37,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/rooms")
 @RequiredArgsConstructor
-@Tag(name = "Rooms", description = "Room creation, joining and lobby retrieval")
+@Tag(name = "Rooms", description = "Room creation, membership and lobby retrieval")
 public class RoomController {
     private final RoomService roomService;
 
@@ -88,7 +88,7 @@ public class RoomController {
     @GetMapping("/{code}")
     @Operation(operationId = "getRoomLobby", summary = "Get a room and its participants",
             description = "Requires a valid X-Participant-Token belonging to a participant in this room. "
-                    + "There is no request body: the server resolves the participant from the token. "
+                    + "After a disconnect, reuse the same token within 24 hours of issue. "
                     + "Returns the current status (including VOTING/FINISHED), preferences and participants "
                     + "ordered by ID, without tokens. Checks run in order: token validity, room existence "
                     + "and room membership. Public access before creating or joining a room is not supported.",
@@ -123,6 +123,25 @@ public class RoomController {
         return roomService.getLobby(code, participant);
     }
 
+    @PostMapping("/{code}/leave")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(operationId = "leaveRoom", summary = "Leave a room",
+            description = "Removes the participant and their votes and revokes their token. "
+                    + "If the host leaves, the remaining participant with the lowest ID becomes host. "
+                    + "If the host is alone, the room is deleted. Voting continues for remaining participants.",
+            security = @SecurityRequirement(name = OpenApiConfig.PARTICIPANT_TOKEN))
+    @ApiResponse(responseCode = "204", description = "Left the room", content = @Content)
+    @ApiResponse(responseCode = "401", description = "INVALID_TOKEN: missing, expired or revoked token",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @ApiResponse(responseCode = "403", description = "WRONG_ROOM: token belongs to another room",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @ApiResponse(responseCode = "404", description = "ROOM_NOT_FOUND: room does not exist",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    public void leaveRoom(@PathVariable String code,
+            @Parameter(hidden = true) @CurrentParticipant Participant participant) {
+        roomService.leaveRoom(code, participant);
+    }
+
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/{code}/join")
     @Operation(operationId = "joinRoom", summary = "Join a room by code",
@@ -145,7 +164,8 @@ public class RoomController {
                                 schema = @Schema(implementation = ErrorResponse.class),
                                 examples = @ExampleObject(value = RoomApiExamples.ROOM_NOT_FOUND))),
                 @ApiResponse(responseCode = "409", description = "Conflict. Checks run in order: ROOM_NOT_JOINABLE "
-                        + "(status is not LOBBY), ROOM_FULL (already 5 participants), NAME_TAKEN (name taken, case-insensitive).",
+                        + "(game has started or is starting), ROOM_FULL (already 5 participants), "
+                        + "NAME_TAKEN (name taken, case-insensitive).",
                         content = @Content(mediaType = "application/json",
                                 schema = @Schema(implementation = ErrorResponse.class), examples = {
                                     @ExampleObject(name = "Room full", value = RoomApiExamples.ROOM_FULL),

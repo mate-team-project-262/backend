@@ -63,6 +63,6 @@ public final class RoomApiExamples {
             {"code":"NAME_TAKEN","message":"Name already has taken","fieldErrors":[]}
             """;
     public static final String ROOM_NOT_JOINABLE = """
-            {"code":"ROOM_NOT_JOINABLE","message":"Room not in status LOBBY","fieldErrors":[]}
+            {"code":"ROOM_NOT_JOINABLE","message":"Joining is closed because the game has started or is starting","fieldErrors":[]}
             """;
 }

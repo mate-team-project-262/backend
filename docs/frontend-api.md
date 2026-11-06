@@ -123,10 +123,10 @@ Handle errors by HTTP status and `code`, not by `message` text.
 | Operation | HTTP | code | Cause / frontend action |
 | --- | --- | --- | --- |
 | Create, join | 400 | `VALIDATION_ERROR` | Check form fields and display `fieldErrors` |
-| GET | 401 | `INVALID_TOKEN` | Missing, blank, unknown or expired token; protected lobby access is unavailable |
-| GET | 403 | `WRONG_ROOM` | Token belongs to another room; use the correct room's token |
-| GET, join | 404 | `ROOM_NOT_FOUND` | Room does not exist; display an invitation code error |
-| Join | 409 | `ROOM_NOT_JOINABLE` | Status is no longer `LOBBY`; joining is closed |
+| GET, leave | 401 | `INVALID_TOKEN` | Missing, blank, unknown, expired or revoked token |
+| GET, leave | 403 | `WRONG_ROOM` | Token belongs to another room; use the correct room's token |
+| GET, join, leave | 404 | `ROOM_NOT_FOUND` | Room does not exist; display an invitation code error |
+| Join | 409 | `ROOM_NOT_JOINABLE` | The game has started or is starting |
 | Join | 409 | `ROOM_FULL` | Room already has 5 participants |
 | Join | 409 | `NAME_TAKEN` | Name is taken; ask for another one |
 | Create, join | 400 | not provided | Malformed JSON, wrong type, unknown enum or missing body |
@@ -148,6 +148,22 @@ If multiple conditions fail, the first detected error is returned.
 Do not automatically retry POST after a timeout or network error: the operation
 may have succeeded while its response was lost. A repeated join creates another
 participant or conflicts on the name; idempotency keys are not supported.
+
+## Leaving and reconnecting
+
+Send `POST /rooms/{code}/leave` with `X-Participant-Token` and no body.
+A successful request returns `204 No Content` and removes the participant and their
+votes. Clear the token after success. When the host leaves, the participant with
+the smallest ID becomes host. If the host was alone, the room is deleted.
+An active vote continues for the remaining participants.
+
+After a network disconnect, call `GET /rooms/{code}` with the existing token
+within 24 hours of issue. Use the participants list to refresh the host role.
+During voting, `GET /rooms/{code}/progress` returns `allFinished` based on the
+participants who are still in the room.
+
+Import [the S3-1 Postman collection](postman/S3-1-leave-room.postman_collection.json),
+set `baseUrl` to your backend and run the requests in order with `TITLE_SOURCE=stub`.
 
 ## Swagger and frontend connectivity
 

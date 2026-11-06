@@ -9,10 +9,14 @@ import com.team262.moviematch.model.Room;
 import com.team262.moviematch.model.RoomStatus;
 import com.team262.moviematch.repository.ParticipantRepository;
 import com.team262.moviematch.repository.RoomRepository;
+import com.team262.moviematch.repository.VoteRepository;
 import com.team262.moviematch.service.ParticipantTokenService;
 import com.team262.moviematch.service.RoomService;
 import com.team262.moviematch.util.RoomCodeGenerator;
 import java.time.LocalDateTime;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -37,13 +41,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest(properties = {
         "tmdb.base-url=https://example.invalid", "tmdb.api-key=test-placeholder",
-        "room.max-participants=5"
+        "room.max-participants=5", "title.source=stub"
 })
 @AutoConfigureMockMvc
 @Import(MySqlTestConfiguration.class)
@@ -52,6 +57,7 @@ class RoomControllerIntegrationTest {
     @Autowired private ObjectMapper json;
     @Autowired private RoomRepository rooms;
     @Autowired private ParticipantRepository participants;
+    @Autowired private VoteRepository votes;
     @Autowired private RoomService roomService;
     @MockitoBean private RoomCodeGenerator codeGenerator;
     @MockitoSpyBean private ParticipantTokenService tokenService;
@@ -245,6 +251,162 @@ class RoomControllerIntegrationTest {
         verify(codeGenerator).generateCode();
         assertThat(rooms.count()).isZero();
         assertThat(participants.count()).isZero();
+    }
+
+    @Test
+    void guestCanLeaveAndTheirNameCanBeReusedWithANewToken() throws Exception {
+        String host = token(create("{\"displayName\":\"Host\"}"));
+        String guest = join("Guest");
+
+        mvc.perform(get("/rooms/K7M2QX").header("X-Participant-Token", guest))
+                .andExpect(status().isOk());
+        mvc.perform(post("/rooms/K7M2QX/leave").header("X-Participant-Token", guest))
+                .andExpect(status().isNoContent()).andExpect(content().string(""));
+        assertThat(participants.findByToken(guest)).isEmpty();
+        mvc.perform(post("/rooms/K7M2QX/leave").header("X-Participant-Token", guest))
+                .andExpect(status().isUnauthorized()).andExpect(jsonPath("$.code").value("INVALID_TOKEN"));
+        mvc.perform(get("/rooms/K7M2QX").header("X-Participant-Token", guest))
+                .andExpect(status().isUnauthorized()).andExpect(jsonPath("$.code").value("INVALID_TOKEN"));
+        mvc.perform(get("/rooms/K7M2QX").header("X-Participant-Token", host))
+                .andExpect(jsonPath("$.participantCount").value(1));
+        assertThat(join("Guest")).isNotEqualTo(guest);
+    }
+
+    @Test
+    void lowestIdTakesOverAndCanStartTheGame() throws Exception {
+        String host = token(create("{\"displayName\":\"Host\"}"));
+        String next = join("Next");
+        join("Later");
+
+        mvc.perform(post("/rooms/K7M2QX/leave").header("X-Participant-Token", host))
+                .andExpect(status().isNoContent());
+        mvc.perform(get("/rooms/K7M2QX").header("X-Participant-Token", next))
+                .andExpect(jsonPath("$.participants[0].displayName").value("Next"))
+                .andExpect(jsonPath("$.participants[0].host").value(true))
+                .andExpect(jsonPath("$.participants[1].host").value(false));
+        mvc.perform(post("/rooms/K7M2QX/start").header("X-Participant-Token", next))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("VOTING"));
+        mvc.perform(post("/rooms/K7M2QX/join").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"displayName\":\"Another\"}"))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("ROOM_NOT_JOINABLE"))
+                .andExpect(jsonPath("$.message").value("Joining is closed because the game has started or is starting"));
+    }
+
+    @Test
+    void lastHostDeletesRoomAndTheirTokenStopsWorking() throws Exception {
+        String host = token(create("{\"displayName\":\"Host\"}"));
+        mvc.perform(post("/rooms/ABCD23/leave").header("X-Participant-Token", host))
+                .andExpect(status().isNotFound()).andExpect(jsonPath("$.code").value("ROOM_NOT_FOUND"));
+        mvc.perform(post("/rooms/K7M2QX/leave").header("X-Participant-Token", host))
+                .andExpect(status().isNoContent());
+        assertThat(rooms.findByCode("K7M2QX")).isEmpty();
+        assertThat(participants.findByToken(host)).isEmpty();
+        mvc.perform(post("/rooms/K7M2QX/leave").header("X-Participant-Token", host))
+                .andExpect(status().isUnauthorized()).andExpect(jsonPath("$.code").value("INVALID_TOKEN"));
+    }
+
+    @Test
+    void leaveRejectsMissingTokenAndTokenFromAnotherRoom() throws Exception {
+        String host = token(create("{\"displayName\":\"Host\"}"));
+        when(codeGenerator.generateCode()).thenReturn("ABCD23");
+        create("{\"displayName\":\"Other\"}", "ABCD23");
+
+        mvc.perform(post("/rooms/K7M2QX/leave"))
+                .andExpect(status().isUnauthorized()).andExpect(jsonPath("$.code").value("INVALID_TOKEN"));
+        mvc.perform(post("/rooms/ABCD23/leave").header("X-Participant-Token", host))
+                .andExpect(status().isForbidden()).andExpect(jsonPath("$.code").value("WRONG_ROOM"));
+        assertThat(rooms.count()).isEqualTo(2);
+        assertThat(participants.count()).isEqualTo(2);
+    }
+
+    @Test
+    void leavingRemovesVotesAndCompletesProgressWithoutChangingVotingStatus() throws Exception {
+        String host = token(create("{\"displayName\":\"Host\"}"));
+        String guest = join("Guest");
+        Participant leaving = participants.findByToken(guest).orElseThrow();
+        mvc.perform(post("/rooms/K7M2QX/start").header("X-Participant-Token", host))
+                .andExpect(status().isOk());
+        String deck = mvc.perform(get("/rooms/K7M2QX/deck").header("X-Participant-Token", host))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        JsonNode cards = json.readTree(deck).path("cards");
+        for (JsonNode card : cards) {
+            vote(host, card.path("roomTitleId").asLong());
+        }
+        vote(guest, cards.get(0).path("roomTitleId").asLong());
+        Long roomId = leaving.getRoom().getId();
+        assertThat(votes.countByParticipantIdAndRoomTitleRoomId(leaving.getId(), roomId)).isEqualTo(1);
+        mvc.perform(get("/rooms/K7M2QX/progress").header("X-Participant-Token", host))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.allFinished").value(false));
+
+        mvc.perform(post("/rooms/K7M2QX/leave").header("X-Participant-Token", guest))
+                .andExpect(status().isNoContent());
+
+        assertThat(votes.countByParticipantIdAndRoomTitleRoomId(leaving.getId(), roomId)).isZero();
+        assertThat(votes.count()).isEqualTo(cards.size());
+        mvc.perform(get("/rooms/K7M2QX/progress").header("X-Participant-Token", host))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.allFinished").value(true));
+        mvc.perform(get("/rooms/K7M2QX").header("X-Participant-Token", host))
+                .andExpect(jsonPath("$.status").value("VOTING"));
+        mvc.perform(post("/rooms/K7M2QX/leave").header("X-Participant-Token", host))
+                .andExpect(status().isNoContent());
+        assertThat(rooms.findByCode("K7M2QX")).isEmpty();
+        assertThat(votes.count()).isZero();
+    }
+
+    @Test
+    void concurrentLeaveJoinAndStartKeepOneHostAndAConsistentRoom() throws Exception {
+        String host = token(create("{\"displayName\":\"Host\"}"));
+        String next = join("Next");
+        join("Later");
+        CountDownLatch startTogether = new CountDownLatch(1);
+        try (var requests = Executors.newFixedThreadPool(3)) {
+            var leave = requests.submit(() -> {
+                startTogether.await();
+                return mvc.perform(post("/rooms/K7M2QX/leave").header("X-Participant-Token", host))
+                        .andReturn().getResponse().getStatus();
+            });
+            var join = requests.submit(() -> {
+                startTogether.await();
+                return mvc.perform(post("/rooms/K7M2QX/join").contentType(MediaType.APPLICATION_JSON)
+                                .content("{\"displayName\":\"Another\"}"))
+                        .andReturn().getResponse().getStatus();
+            });
+            var start = requests.submit(() -> {
+                startTogether.await();
+                return mvc.perform(post("/rooms/K7M2QX/start").header("X-Participant-Token", host))
+                        .andReturn().getResponse().getStatus();
+            });
+            startTogether.countDown();
+            assertThat(leave.get(15, TimeUnit.SECONDS)).isEqualTo(204);
+            int joinStatus = join.get(15, TimeUnit.SECONDS);
+            int startStatus = start.get(15, TimeUnit.SECONDS);
+            assertThat(startStatus).isIn(200, 401);
+            assertThat(joinStatus).isIn(201, 409);
+            if (startStatus == 401) {
+                assertThat(joinStatus).isEqualTo(201);
+            }
+            Room room = rooms.findByCode("K7M2QX").orElseThrow();
+            assertThat(room.getStatus()).isEqualTo(startStatus == 200 ? RoomStatus.VOTING : RoomStatus.LOBBY);
+            var remaining = participants.findAllByRoomIdOrderByIdAsc(room.getId());
+            assertThat(remaining).hasSize(joinStatus == 201 ? 3 : 2);
+            assertThat(remaining.stream().filter(Participant::isHost).map(Participant::getToken))
+                    .containsExactly(next);
+            assertThat(participants.findByToken(host)).isEmpty();
+        }
+    }
+
+    private String join(String name) throws Exception {
+        String response = mvc.perform(post("/rooms/K7M2QX/join").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"displayName\":\"%s\"}".formatted(name)))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        return json.readTree(response).at("/currentParticipant/token").asText();
+    }
+
+    private void vote(String token, long cardId) throws Exception {
+        mvc.perform(post("/rooms/K7M2QX/votes").header("X-Participant-Token", token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"roomTitleId\":%d,\"isLiked\":true}".formatted(cardId)))
+                .andExpect(status().isOk());
     }
 
     private JsonNode create(String request) throws Exception {

@@ -18,6 +18,8 @@ public interface ParticipantRepository extends JpaRepository<Participant, Long> 
 
     List<Participant> findAllByRoomIdOrderByIdAsc(Long roomId);
 
+    Optional<Participant> findFirstByRoomIdAndIdNotOrderByIdAsc(Long roomId, Long participantId);
+
     @EntityGraph(attributePaths = "room")
     Optional<Participant> findByToken(String token);
 

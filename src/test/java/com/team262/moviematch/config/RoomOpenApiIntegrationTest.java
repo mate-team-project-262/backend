@@ -92,6 +92,19 @@ class RoomOpenApiIntegrationTest {
     }
 
     @Test
+    void documentsAuthenticatedLeaveWithNoRequestOrResponseBody() throws Exception {
+        JsonNode spec = json.readTree(mvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        JsonNode leave = spec.at("/paths/~1rooms~1{code}~1leave/post");
+        assertThat(leave.path("responses").properties()).extracting(java.util.Map.Entry::getKey)
+                .containsExactlyInAnyOrder("204", "401", "403", "404");
+        assertThat(leave.path("responses").path("204").has("content")).isFalse();
+        assertThat(leave.path("security").get(0).has(OpenApiConfig.PARTICIPANT_TOKEN)).isTrue();
+        assertThat(leave.has("requestBody")).isFalse();
+        assertThat(leave.path("parameters")).hasSize(1);
+    }
+
+    @Test
     void servesSwaggerUiAndYamlWithoutParticipantToken() throws Exception {
         mvc.perform(get("/swagger-ui/index.html")).andExpect(status().isOk())
                 .andExpect(content().string(containsString("Swagger UI")));
