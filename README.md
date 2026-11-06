@@ -223,3 +223,10 @@ Repeated requests reuse the saved deck. Calls run sequentially on the caller
 thread, with request budgets and bounded HTTP bodies.
 The service is internal; room-start HTTP integration is a separate step.
 See [algorithm, limits, concurrency and verification](docs/room-decks.md).
+
+## Saved deck and swipes (S2-5, S2-6)
+
+`GET /rooms/{code}/deck` returns the stored deck, More details and personal votes.
+`POST /rooms/{code}/votes` saves a like or skip and returns personal progress.
+Both require `X-Participant-Token` and never call TMDB. Repeating the same choice
+succeeds; changing a saved choice returns `409 ALREADY_VOTED`.

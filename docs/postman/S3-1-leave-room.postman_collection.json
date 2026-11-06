@@ -1,0 +1,347 @@
+{
+  "info": {
+    "name": "Movie Match - S3-1 Leave Room",
+    "description": "Run requests in order against a backend with TITLE_SOURCE=stub. The collection captures the room code and participant tokens automatically.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "roomCode",
+      "value": ""
+    },
+    {
+      "key": "hostToken",
+      "value": ""
+    },
+    {
+      "key": "firstToken",
+      "value": ""
+    },
+    {
+      "key": "secondToken",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Create room",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"displayName\":\"Host\"}"
+        },
+        "url": "{{baseUrl}}/rooms"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+              "const room = pm.response.json();",
+              "pm.collectionVariables.set(\"roomCode\", room.code);",
+              "pm.collectionVariables.set(\"hostToken\", room.participant.token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Join as first guest",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"displayName\":\"First guest\"}"
+        },
+        "url": "{{baseUrl}}/rooms/{{roomCode}}/join"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+              "pm.collectionVariables.set(\"firstToken\", pm.response.json().currentParticipant.token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Join as second guest",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"displayName\":\"Second guest\"}"
+        },
+        "url": "{{baseUrl}}/rooms/{{roomCode}}/join"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+              "pm.collectionVariables.set(\"secondToken\", pm.response.json().currentParticipant.token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Reconnect using the first guest token",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-Participant-Token",
+            "value": "{{firstToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/rooms/{{roomCode}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Host leaves",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-Participant-Token",
+            "value": "{{hostToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/rooms/{{roomCode}}/leave"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 204\", () => pm.response.to.have.status(204));",
+              "pm.test(\"Empty response\", () => pm.expect(pm.response.text()).to.equal(\"\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Repeated leave is rejected",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-Participant-Token",
+            "value": "{{hostToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/rooms/{{roomCode}}/leave"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+              "pm.test(\"Token revoked\", () => pm.expect(pm.response.json().code).to.equal(\"INVALID_TOKEN\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Verify the new host",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-Participant-Token",
+            "value": "{{firstToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/rooms/{{roomCode}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "const hosts = pm.response.json().participants.filter(participant => participant.host);",
+              "pm.test(\"The first guest is the only host\", () => pm.expect(hosts.map(host => host.displayName)).to.eql([\"First guest\"]));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. New host starts the game",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-Participant-Token",
+            "value": "{{firstToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/rooms/{{roomCode}}/start"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Voting has started\", () => pm.expect(pm.response.json().status).to.equal(\"VOTING\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "9. Second guest leaves during voting",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-Participant-Token",
+            "value": "{{secondToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/rooms/{{roomCode}}/leave"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 204\", () => pm.response.to.have.status(204));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "10. Verify voting continues",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "X-Participant-Token",
+            "value": "{{firstToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/rooms/{{roomCode}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+              "pm.test(\"Room is still voting\", () => pm.expect(pm.response.json().status).to.equal(\"VOTING\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "11. Last host leaves",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "X-Participant-Token",
+            "value": "{{firstToken}}"
+          }
+        ],
+        "url": "{{baseUrl}}/rooms/{{roomCode}}/leave"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 204\", () => pm.response.to.have.status(204));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "12. Verify the room is gone",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"displayName\":\"Another guest\"}"
+        },
+        "url": "{{baseUrl}}/rooms/{{roomCode}}/join"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+              "pm.test(\"Room deleted\", () => pm.expect(pm.response.json().code).to.equal(\"ROOM_NOT_FOUND\"));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

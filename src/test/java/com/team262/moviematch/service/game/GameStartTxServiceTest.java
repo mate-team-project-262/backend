@@ -74,8 +74,8 @@ class GameStartTxServiceTest {
         Room room = room();
         Participant p = participant(room, false);
 
-        when(accessService.requireRoomMembership("K7M2QX", p))
-                .thenReturn(room);
+        when(accessService.requireRoomMembershipForUpdate("K7M2QX", p))
+                .thenReturn(p);
 
         assertThatThrownBy(() -> service.claimStart("K7M2QX", p))
                 .satisfies(t -> assertThat(codeOf(t))
@@ -91,8 +91,8 @@ class GameStartTxServiceTest {
 
         Participant p = participant(room, true);
 
-        when(accessService.requireRoomMembership("K7M2QX", p))
-                .thenReturn(room);
+        when(accessService.requireRoomMembershipForUpdate("K7M2QX", p))
+                .thenReturn(p);
 
         assertThatThrownBy(() -> service.claimStart("K7M2QX", p))
                 .satisfies(t -> assertThat(codeOf(t))
@@ -104,8 +104,8 @@ class GameStartTxServiceTest {
         Room room = room();
         Participant p = participant(room, true);
 
-        when(accessService.requireRoomMembership("K7M2QX", p))
-                .thenReturn(room);
+        when(accessService.requireRoomMembershipForUpdate("K7M2QX", p))
+                .thenReturn(p);
 
         when(participantRepository.countByRoom(room))
                 .thenReturn(1L);
@@ -120,8 +120,8 @@ class GameStartTxServiceTest {
         Room room = room();
         Participant p = participant(room, true);
 
-        when(accessService.requireRoomMembership("K7M2QX", p))
-                .thenReturn(room);
+        when(accessService.requireRoomMembershipForUpdate("K7M2QX", p))
+                .thenReturn(p);
 
         when(participantRepository.countByRoom(room))
                 .thenReturn(2L);
@@ -143,8 +143,8 @@ class GameStartTxServiceTest {
 
         Participant p = participant(room, true);
 
-        when(accessService.requireRoomMembership("K7M2QX", p))
-                .thenReturn(room);
+        when(accessService.requireRoomMembershipForUpdate("K7M2QX", p))
+                .thenReturn(p);
 
         when(participantRepository.countByRoom(room))
                 .thenReturn(2L);
