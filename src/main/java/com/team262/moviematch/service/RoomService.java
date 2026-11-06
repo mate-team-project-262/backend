@@ -13,4 +13,6 @@ public interface RoomService {
     RoomDetailsResponse getLobby(String code, Participant participant);
 
     JoinRoomResponse joinRoom(String code, JoinRoomRequest request);
+
+    void leaveRoom(String code, Participant participant);
 }

@@ -67,6 +67,9 @@ class RoomServiceTest {
     private ParticipantTokenService tokens;
 
     @Mock
+    private ParticipantAccessService access;
+
+    @Mock
     private RoomCodeGenerator codes;
 
     @Mock
@@ -83,12 +86,31 @@ class RoomServiceTest {
                 rooms,
                 participants,
                 tokens,
+                access,
                 codes,
                 Mappers.getMapper(RoomMapper.class),
                 participantMapper,
                 transactions,
                 5
         );
+    }
+
+    @Test
+    void leaveUsesCurrentHostRoleAndPromotesTheNextParticipant() {
+        Room room = new Room("K7M2QX");
+        ReflectionTestUtils.setField(room, "id", 1L);
+        Participant authenticated = new Participant(room, "Guest", false, "token", LocalDateTime.now());
+        Participant leaving = new Participant(room, "Guest", true, "token", LocalDateTime.now());
+        ReflectionTestUtils.setField(leaving, "id", 2L);
+        Participant next = new Participant(room, "Next", false, "next", LocalDateTime.now());
+        when(access.requireRoomMembershipForUpdate("K7M2QX", authenticated)).thenReturn(leaving);
+        when(participants.findFirstByRoomIdAndIdNotOrderByIdAsc(1L, 2L)).thenReturn(Optional.of(next));
+
+        service.leaveRoom("K7M2QX", authenticated);
+
+        assertThat(next.isHost()).isTrue();
+        verify(participants).delete(leaving);
+        verifyNoInteractions(rooms);
     }
 
     @Test

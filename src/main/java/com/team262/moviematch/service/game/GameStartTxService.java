@@ -39,8 +39,9 @@ public class GameStartTxService {
     // Transaction 1 (short): checks conditions and takes a position (BUILDING).
     @Transactional
     public StartPlan claimStart(String code, Participant participant) {
-        Room room = accessService.requireRoomMembership(code, participant);   // 404, 403 WRONG_ROOM
-        if (!participant.isHost()) {
+        Participant current = accessService.requireRoomMembershipForUpdate(code, participant);
+        Room room = current.getRoom();
+        if (!current.isHost()) {
             throw new ForbiddenException(ErrorCode.NOT_HOST, "Only the host can start the game");
         }
         if (room.getStatus() != RoomStatus.LOBBY) {
