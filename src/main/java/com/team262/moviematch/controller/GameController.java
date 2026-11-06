@@ -2,10 +2,13 @@ package com.team262.moviematch.controller;
 
 import com.team262.moviematch.config.OpenApiConfig;
 import com.team262.moviematch.config.openapi.FrameworkErrorResponse;
+import com.team262.moviematch.config.openapi.RoomApiExamples;
 import com.team262.moviematch.dto.error.ErrorResponse;
+import com.team262.moviematch.dto.game.GameProgressResponse;
 import com.team262.moviematch.dto.room.response.StartGameResponse;
 import com.team262.moviematch.model.Participant;
 import com.team262.moviematch.security.CurrentParticipant;
+import com.team262.moviematch.service.game.GameProgressService;
 import com.team262.moviematch.service.game.GameStartService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -16,6 +19,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,6 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Game", description = "Starting the game and swiping")
 public class GameController {
     private final GameStartService gameStartService;
+    private final GameProgressService gameProgressService;
 
     @PostMapping("/{code}/start")
     @Operation(operationId = "startGame", summary = "Start the game (host only)",
@@ -42,9 +47,12 @@ public class GameController {
                                 schema = @Schema(implementation = StartGameResponse.class),
                                 examples = @ExampleObject(
                                         value = "{\"code\":\"K7M2QX\",\"status\":\"VOTING\",\"deckSize\":20}"))),
-                @ApiResponse(responseCode = "401", description = "INVALID_TOKEN: missing, blank, unknown or expired token",
-                        content = @Content(mediaType = "application/json",
-                                schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "401", description = "INVALID_TOKEN: missing, blank, unknown or expired token",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class), examples = {
+                            @ExampleObject(name = "Missing token", value = RoomApiExamples.MISSING_TOKEN),
+                            @ExampleObject(name = "Unknown token", value = RoomApiExamples.INVALID_TOKEN),
+                            @ExampleObject(name = "Expired token", value = RoomApiExamples.EXPIRED_TOKEN)})),
                 @ApiResponse(responseCode = "403", description = "WRONG_ROOM (token of another room) "
                         + "or NOT_HOST (only the host can start the game)",
                         content = @Content(mediaType = "application/json",
@@ -53,9 +61,10 @@ public class GameController {
                                             value = "{\"code\":\"NOT_HOST\",\"message\":\"Only the host can start the game\",\"fieldErrors\":[]}"),
                                     @ExampleObject(name = "Wrong room",
                                             value = "{\"code\":\"WRONG_ROOM\",\"message\":\"Participant does not belong to this room\",\"fieldErrors\":[]}")})),
-                @ApiResponse(responseCode = "404", description = "ROOM_NOT_FOUND",
-                        content = @Content(mediaType = "application/json",
-                                schema = @Schema(implementation = ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "ROOM_NOT_FOUND",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = RoomApiExamples.ROOM_NOT_FOUND))),
                 @ApiResponse(responseCode = "409", description = "ROOM_ALREADY_STARTED (status is not LOBBY "
                         + "or a start is in progress), NOT_ENOUGH_PARTICIPANTS (fewer than 2), "
                         + "NOT_ENOUGH_TITLES (fewer than 20 titles match the preferences) "
@@ -84,5 +93,51 @@ public class GameController {
             @PathVariable String code,
             @CurrentParticipant Participant participant) {
         return gameStartService.start(code, participant);
+    }
+
+    @GetMapping("/{code}/progress")
+    @Operation(operationId = "getGameProgress", summary = "Get voting progress for the waiting screen",
+            description = "Requires X-Participant-Token of a participant in this room; there is no request body. "
+                    + "A participant is finished when they have a saved vote (like or skip) on every card of "
+                    + "the room's deck. Poll about every 3 seconds. Show finishedParticipants / totalParticipants "
+                    + "as '3 / 4 completed' and participants[].finished as Done / Swiping... "
+                    + "When allFinished is true the room status is still VOTING; no winner is computed here. "
+                    + "Checks run in order: token, room existence, room membership, status. "
+                    + "Tokens are never returned.",
+            security = @SecurityRequirement(name = OpenApiConfig.PARTICIPANT_TOKEN), responses = {
+            @ApiResponse(responseCode = "200", description = "Current progress (room status VOTING or FINISHED)",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = GameProgressResponse.class),
+                            examples = @ExampleObject(value = "{\"finishedParticipants\":3,\"totalParticipants\":4,"
+                                    + "\"myFinished\":true,\"allFinished\":false,\"participants\":["
+                                    + "{\"id\":1,\"displayName\":\"Sofia\",\"host\":true,\"finished\":true},"
+                                    + "{\"id\":2,\"displayName\":\"Anna\",\"host\":false,\"finished\":true},"
+                                    + "{\"id\":3,\"displayName\":\"Peter\",\"host\":false,\"finished\":true},"
+                                    + "{\"id\":4,\"displayName\":\"Alex\",\"host\":false,\"finished\":false}]}"))),
+            @ApiResponse(responseCode = "401", description = "INVALID_TOKEN: missing, blank, unknown or expired token",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class), examples = {
+                            @ExampleObject(name = "Missing token", value = RoomApiExamples.MISSING_TOKEN),
+                            @ExampleObject(name = "Unknown token", value = RoomApiExamples.INVALID_TOKEN),
+                            @ExampleObject(name = "Expired token", value = RoomApiExamples.EXPIRED_TOKEN)})),
+            @ApiResponse(responseCode = "403", description = "WRONG_ROOM: the token belongs to another room",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = RoomApiExamples.WRONG_ROOM))),
+            @ApiResponse(responseCode = "404", description = "ROOM_NOT_FOUND",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorResponse.class),
+                            examples = @ExampleObject(value = RoomApiExamples.ROOM_NOT_FOUND))),
+            @ApiResponse(responseCode = "500", description = "Unexpected server failure",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = FrameworkErrorResponse.class),
+                            examples = @ExampleObject(value =
+                                    "{\"status\":500,\"error\":\"Internal Server Error\",\"path\":\"/rooms/K7M2QX/progress\"}")))
+    })
+    public GameProgressResponse getProgress(
+            @Parameter(description = "Case-insensitive room code", example = "K7M2QX", required = true)
+            @PathVariable String code,
+            @CurrentParticipant Participant participant) {
+        return gameProgressService.getProgress(code, participant);
     }
 }
