@@ -58,10 +58,11 @@ class DeckCandidateSelectorTest {
 
     @ParameterizedTest
     @EnumSource(ContentType.class)
-    void handlesSinglePageAndBothMediaTypes(ContentType type) {
+    void acceptsOneMatchingGenreOnASinglePage(ContentType type) {
         FakeSource source = new FakeSource(1);
         DeckProperties props = properties();
-        List<TmdbTitle> result = selector(source, props).select(type, filters, new Random(1));
+        DiscoverFilters eitherGenre = new DiscoverFilters(Set.of(18, 35), 120, null);
+        List<TmdbTitle> result = selector(source, props).select(type, eitherGenre, new Random(1));
         assertThat(result).hasSize(20);
         assertThat(source.discoverCalls.get()).isEqualTo(1);
         assertThat(result).allSatisfy(title -> assertThat(title.mediaType())

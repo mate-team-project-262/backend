@@ -33,8 +33,8 @@ Spring context exposes exactly one `TitleSource`.
 ## Discover
 
 - `MOVIES` uses `/discover/movie`; `TV_SERIES` uses `/discover/tv`.
-- `genreIds` becomes sorted, comma-separated `with_genres`: all selected genres
-  must match (TMDB AND semantics). Null or empty genres impose no genre filter.
+- `genreIds` becomes sorted, pipe-separated `with_genres`. At least one selected
+  genre must match (TMDB OR semantics). Null or empty genres impose no genre filter.
 - `maxDurationMinutes` becomes `with_runtime.lte`; for TV it filters episode length.
 - `minVoteCount` becomes `vote_count.gte`; null omits the filter and zero is valid.
 - Pages are 1-based, from 1 through 500. Results preserve the provider's

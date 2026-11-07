@@ -40,7 +40,7 @@ public class TmdbTitleSource implements TitleSource {
         query.add("include_adult", "false");
         if (!effective.genreIds().isEmpty()) {
             query.add("with_genres", effective.genreIds().stream().sorted()
-                    .map(String::valueOf).collect(Collectors.joining(",")));
+                    .map(String::valueOf).collect(Collectors.joining("|")));
         }
         if (effective.maxDurationMinutes() != null) {
             query.add("with_runtime.lte", effective.maxDurationMinutes().toString());
