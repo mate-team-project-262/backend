@@ -113,6 +113,26 @@ class RoomOpenApiIntegrationTest {
     }
 
     @Test
+    void documentsResultsWithFlatCardsAndParticipantToken() throws Exception {
+        JsonNode spec = json.readTree(mvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        JsonNode results = spec.at("/paths/~1rooms~1{code}~1results/get");
+        assertThat(results.path("security").get(0).has(OpenApiConfig.PARTICIPANT_TOKEN)).isTrue();
+        assertThat(results.path("responses").path("409").path("description").asText())
+                .isEqualTo("RESULT_NOT_READY");
+        assertThat(results.at("/responses/409/content/application~1json/schema/$ref").asText())
+                .isEqualTo("#/components/schemas/ErrorResponse");
+        JsonNode card = spec.at("/components/schemas/ResultCardResponse/properties");
+        assertThat(card.has("roomTitleId")).isTrue();
+        assertThat(card.has("likesCount")).isTrue();
+        assertThat(card.has("winner")).isTrue();
+        assertThat(card.has("myVote")).isFalse();
+        JsonNode deckCard = spec.at("/components/schemas/DeckCardResponse/properties");
+        assertThat(deckCard.has("roomTitleId")).isTrue();
+        assertThat(deckCard.has("myVote")).isTrue();
+    }
+
+    @Test
     void frontendCanCreateJoinAndReadLobbyWithDocumentedFields() {
         JsonNode created = post("/rooms", RoomApiExamples.CREATE_REQUEST, 201);
         String code = created.path("code").asText();

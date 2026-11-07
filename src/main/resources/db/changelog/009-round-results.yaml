@@ -1,0 +1,54 @@
+databaseChangeLog:
+  - changeSet:
+      id: 009-round-results
+      author: team262
+      changes:
+        - addColumn:
+            tableName: rooms
+            columns:
+              - column:
+                  name: result_participant_count
+                  type: INT
+        - addColumn:
+            tableName: room_titles
+            columns:
+              - column:
+                  name: result_likes_count
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+  - changeSet:
+      id: 009-backfill-completed-rounds
+      author: team262
+      changes:
+        - sql:
+            sql: |
+              UPDATE rooms r
+              JOIN (SELECT room_id, COUNT(*) AS participant_count FROM participants GROUP BY room_id) p
+                ON p.room_id = r.id
+              JOIN (SELECT room_id, COUNT(*) AS card_count FROM room_titles GROUP BY room_id) c
+                ON c.room_id = r.id
+              JOIN (
+                SELECT rt.room_id, COUNT(*) AS vote_count
+                FROM votes v
+                JOIN room_titles rt ON rt.id = v.room_title_id
+                JOIN participants vp ON vp.id = v.participant_id AND vp.room_id = rt.room_id
+                GROUP BY rt.room_id
+              ) totals ON totals.room_id = r.id
+              SET r.status = 'FINISHED', r.result_participant_count = p.participant_count
+              WHERE r.status IN ('VOTING', 'FINISHED') AND totals.vote_count = p.participant_count * c.card_count;
+        - sql:
+            sql: |
+              UPDATE room_titles rt
+              JOIN rooms r ON r.id = rt.room_id
+              JOIN (
+                SELECT v.room_title_id, COUNT(*) AS likes_count
+                FROM votes v
+                JOIN participants p ON p.id = v.participant_id
+                JOIN room_titles card ON card.id = v.room_title_id AND card.room_id = p.room_id
+                WHERE v.is_liked = TRUE
+                GROUP BY v.room_title_id
+              ) likes ON likes.room_title_id = rt.id
+              SET rt.result_likes_count = likes.likes_count
+              WHERE r.result_participant_count IS NOT NULL;

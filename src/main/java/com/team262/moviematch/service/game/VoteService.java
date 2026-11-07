@@ -5,13 +5,11 @@ import com.team262.moviematch.dto.game.VoteResponse;
 import com.team262.moviematch.exception.ErrorCode;
 import com.team262.moviematch.exception.ex.BadRequestException;
 import com.team262.moviematch.exception.ex.ConflictException;
-import com.team262.moviematch.exception.ex.UnauthorizedException;
 import com.team262.moviematch.model.Participant;
 import com.team262.moviematch.model.Room;
 import com.team262.moviematch.model.RoomStatus;
 import com.team262.moviematch.model.RoomTitle;
 import com.team262.moviematch.model.Vote;
-import com.team262.moviematch.repository.ParticipantRepository;
 import com.team262.moviematch.repository.RoomTitleRepository;
 import com.team262.moviematch.repository.VoteRepository;
 import com.team262.moviematch.service.ParticipantAccessService;
@@ -24,17 +22,15 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class VoteService {
     private final ParticipantAccessService accessService;
-    private final ParticipantRepository participants;
     private final RoomTitleRepository roomTitles;
     private final VoteRepository votes;
+    private final GameResultService results;
 
     @Transactional
     public VoteResponse vote(String code, Participant participant, VoteRequest request) {
-        // Serialize requests from this participant before reading existing votes.
-        Participant lockedParticipant = participants.findByIdForUpdate(participant.getId())
-                .orElseThrow(() -> new UnauthorizedException(ErrorCode.INVALID_TOKEN, "Participant no longer exists"));
-        Room room = accessService.requireRoomMembership(code, lockedParticipant);
-        if (room.getStatus() != RoomStatus.VOTING) {
+        Participant lockedParticipant = accessService.requireRoomMembershipForUpdate(code, participant);
+        Room room = lockedParticipant.getRoom();
+        if (room.getStatus() == RoomStatus.LOBBY) {
             throw new ConflictException(ErrorCode.ROOM_NOT_VOTING, "Room is not accepting votes");
         }
         RoomTitle card = roomTitles.findByIdAndRoomId(request.roomTitleId(), room.getId())
@@ -46,11 +42,18 @@ public class VoteService {
                 throw new ConflictException(ErrorCode.ALREADY_VOTED, "Saved vote cannot be changed");
             }
         } else {
+            if (room.getStatus() != RoomStatus.VOTING) {
+                throw new ConflictException(ErrorCode.ROOM_NOT_VOTING, "Room is not accepting votes");
+            }
             votes.save(new Vote(lockedParticipant, card, request.isLiked()));
         }
         int votedCount = Math.toIntExact(
                 votes.countByParticipantIdAndRoomTitleRoomId(participant.getId(), room.getId()));
         int totalCards = Math.toIntExact(roomTitles.countByRoomId(room.getId()));
-        return new VoteResponse(votedCount, totalCards, totalCards > 0 && votedCount == totalCards);
+        boolean finished = totalCards > 0 && votedCount == totalCards;
+        if (finished) {
+            results.finishIfReady(room);
+        }
+        return new VoteResponse(votedCount, totalCards, finished);
     }
 }

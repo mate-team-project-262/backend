@@ -5,10 +5,12 @@ import com.team262.moviematch.config.openapi.FrameworkErrorResponse;
 import com.team262.moviematch.config.openapi.RoomApiExamples;
 import com.team262.moviematch.dto.error.ErrorResponse;
 import com.team262.moviematch.dto.game.GameProgressResponse;
+import com.team262.moviematch.dto.game.GameResultsResponse;
 import com.team262.moviematch.dto.room.response.StartGameResponse;
 import com.team262.moviematch.model.Participant;
 import com.team262.moviematch.security.CurrentParticipant;
 import com.team262.moviematch.service.game.GameProgressService;
+import com.team262.moviematch.service.game.GameResultService;
 import com.team262.moviematch.service.game.GameStartService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -28,10 +30,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/rooms")
 @RequiredArgsConstructor
-@Tag(name = "Game", description = "Starting the game and swiping")
+@Tag(name = "Game", description = "Game start, voting progress and results")
 public class GameController {
     private final GameStartService gameStartService;
     private final GameProgressService gameProgressService;
+    private final GameResultService gameResultService;
 
     @PostMapping("/{code}/start")
     @Operation(operationId = "startGame", summary = "Start the game (host only)",
@@ -101,7 +104,7 @@ public class GameController {
                     + "A participant is finished when they have a saved vote (like or skip) on every card of "
                     + "the room's deck. Poll about every 3 seconds. Show finishedParticipants / totalParticipants "
                     + "as '3 / 4 completed' and participants[].finished as Done / Swiping... "
-                    + "When allFinished is true the room status is still VOTING; no winner is computed here. "
+                    + "When allFinished is true, read the final cards at GET /rooms/{code}/results. "
                     + "Checks run in order: token, room existence, room membership, status. "
                     + "Tokens are never returned.",
             security = @SecurityRequirement(name = OpenApiConfig.PARTICIPANT_TOKEN), responses = {
@@ -139,5 +142,27 @@ public class GameController {
             @PathVariable String code,
             @CurrentParticipant Participant participant) {
         return gameProgressService.getProgress(code, participant);
+    }
+
+    @GetMapping("/{code}/results")
+    @Operation(operationId = "getGameResults", summary = "Get the full results of a finished round",
+            description = "Returns all cards, sorted by likes descending and then by deck position. "
+                    + "All cards tied for the most likes are marked winner if at least one like was cast. "
+                    + "The counts are fixed at the end of the round.",
+            security = @SecurityRequirement(name = OpenApiConfig.PARTICIPANT_TOKEN))
+    @ApiResponse(responseCode = "200", description = "Final results",
+            content = @Content(mediaType = "application/json",
+                    schema = @Schema(implementation = GameResultsResponse.class)))
+    @ApiResponse(responseCode = "401", description = "INVALID_TOKEN",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
+    @ApiResponse(responseCode = "403", description = "WRONG_ROOM",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
+    @ApiResponse(responseCode = "404", description = "ROOM_NOT_FOUND",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
+    @ApiResponse(responseCode = "409", description = "RESULT_NOT_READY",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
+    public GameResultsResponse getResults(@PathVariable String code,
+            @Parameter(hidden = true) @CurrentParticipant Participant participant) {
+        return gameResultService.getResults(code, participant);
     }
 }

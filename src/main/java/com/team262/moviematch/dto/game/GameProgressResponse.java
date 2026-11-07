@@ -10,8 +10,8 @@ public record GameProgressResponse(
                 requiredMode = Schema.RequiredMode.REQUIRED) int totalParticipants,
         @Schema(description = "Whether the caller has voted on every card",
                 requiredMode = Schema.RequiredMode.REQUIRED) boolean myFinished,
-        @Schema(description = "true when every participant has finished. The room status stays VOTING; "
-                + "no winner is computed here", requiredMode = Schema.RequiredMode.REQUIRED) boolean allFinished,
+        @Schema(description = "True when every current participant has finished. Results are available separately.",
+                requiredMode = Schema.RequiredMode.REQUIRED) boolean allFinished,
         @Schema(description = "Participants ordered by ID, without tokens",
                 requiredMode = Schema.RequiredMode.REQUIRED) List<ParticipantProgressDto> participants
 ) {

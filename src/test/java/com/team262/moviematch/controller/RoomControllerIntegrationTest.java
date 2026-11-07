@@ -320,7 +320,7 @@ class RoomControllerIntegrationTest {
     }
 
     @Test
-    void leavingRemovesVotesAndCompletesProgressWithoutChangingVotingStatus() throws Exception {
+    void leavingRemovesVotesAndFinishesVoting() throws Exception {
         String host = token(create("{\"displayName\":\"Host\"}"));
         String guest = join("Guest");
         Participant leaving = participants.findByToken(guest).orElseThrow();
@@ -346,7 +346,7 @@ class RoomControllerIntegrationTest {
         mvc.perform(get("/rooms/K7M2QX/progress").header("X-Participant-Token", host))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.allFinished").value(true));
         mvc.perform(get("/rooms/K7M2QX").header("X-Participant-Token", host))
-                .andExpect(jsonPath("$.status").value("VOTING"));
+                .andExpect(jsonPath("$.status").value("FINISHED"));
         mvc.perform(post("/rooms/K7M2QX/leave").header("X-Participant-Token", host))
                 .andExpect(status().isNoContent());
         assertThat(rooms.findByCode("K7M2QX")).isEmpty();
