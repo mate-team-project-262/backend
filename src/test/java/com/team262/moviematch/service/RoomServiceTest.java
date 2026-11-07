@@ -18,6 +18,7 @@ import com.team262.moviematch.model.Room;
 import com.team262.moviematch.model.RoomStatus;
 import com.team262.moviematch.repository.ParticipantRepository;
 import com.team262.moviematch.repository.RoomRepository;
+import com.team262.moviematch.service.game.GameResultService;
 import com.team262.moviematch.service.impl.RoomServiceImpl;
 import com.team262.moviematch.util.RoomCodeGenerator;
 import java.sql.SQLException;
@@ -70,6 +71,9 @@ class RoomServiceTest {
     private ParticipantAccessService access;
 
     @Mock
+    private GameResultService gameResults;
+
+    @Mock
     private RoomCodeGenerator codes;
 
     @Mock
@@ -87,6 +91,7 @@ class RoomServiceTest {
                 participants,
                 tokens,
                 access,
+                gameResults,
                 codes,
                 Mappers.getMapper(RoomMapper.class),
                 participantMapper,

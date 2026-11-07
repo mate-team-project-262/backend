@@ -39,6 +39,9 @@ public class RoomTitle {
     @Column(nullable = false)
     private int position;
 
+    @Column(name = "result_likes_count", nullable = false)
+    private int resultLikesCount;
+
     protected RoomTitle() {
     }
 
