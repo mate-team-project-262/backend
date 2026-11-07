@@ -63,10 +63,12 @@ class StubTitleSourceTest {
                     TmdbTitle title = source.getDetails(type, candidate.tmdbId());
                     int index = (int) (candidate.tmdbId()
                             - (type == ContentType.MOVIES ? 9000001L : 9100001L));
-                    return title.genres().stream().map(TitleGenre::id).toList().containsAll(Set.of(18, 35))
+                    return title.genres().stream().map(TitleGenre::id).anyMatch(filters.genreIds()::contains)
                             && title.runtimeMinutes() <= 120 && (200 + index * 100) >= 1000;
                 }).toList();
         assertThat(actual).isNotEmpty().isEqualTo(expected);
+        assertThat(actual).anySatisfy(candidate -> assertThat(source.getDetails(type, candidate.tmdbId()).genres())
+                .extracting(TitleGenre::id).contains(18).doesNotContain(35));
         assertThat(source.discover(type, new DiscoverFilters(Set.of(99999), null, null), 1).items()).isEmpty();
         assertThat(source.discover(type, new DiscoverFilters(null, null, Integer.MAX_VALUE), 1).items()).isEmpty();
         assertThat(source.discover(type, new DiscoverFilters(null, 1, null), 1).items()).isEmpty();

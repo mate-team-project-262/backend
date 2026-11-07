@@ -129,7 +129,8 @@ public class DeckCandidateSelector {
                 && (filters.maxDurationMinutes() == null
                     || title.runtimeMinutes() != null && title.runtimeMinutes() > 0
                     && title.runtimeMinutes() <= filters.maxDurationMinutes())
-                && title.genres().stream().map(TitleGenre::id).toList().containsAll(filters.genreIds());
+                && (filters.genreIds().isEmpty() || title.genres().stream()
+                    .map(TitleGenre::id).anyMatch(filters.genreIds()::contains));
     }
 
     private DeckBuildException selectionLimit() {
