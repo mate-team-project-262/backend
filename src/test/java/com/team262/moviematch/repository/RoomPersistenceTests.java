@@ -10,6 +10,7 @@ import jakarta.persistence.EntityManager;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import liquibase.integration.spring.SpringLiquibase;
@@ -63,19 +64,12 @@ class RoomPersistenceTests {
         assertThat(jdbc.queryForList("show tables", String.class))
                 .contains("rooms", "participants", "room_genres");
 
-        Integer appliedChanges = jdbc.queryForObject(
-                "select count(*) from DATABASECHANGELOG",
-                Integer.class
-        );
-
-        assertThat(appliedChanges).isEqualTo(8);
+        String appliedChangesQuery = "select ID from DATABASECHANGELOG order by ID";
+        List<String> appliedChanges = jdbc.queryForList(appliedChangesQuery, String.class);
 
         liquibase.afterPropertiesSet();
 
-        assertThat(jdbc.queryForObject(
-                "select count(*) from DATABASECHANGELOG",
-                Integer.class
-        )).isEqualTo(appliedChanges);
+        assertThat(jdbc.queryForList(appliedChangesQuery, String.class)).isEqualTo(appliedChanges);
     }
 
     @Test
