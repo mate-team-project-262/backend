@@ -176,7 +176,7 @@ class GameProgressIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.finishedParticipants").value(4))
                 .andExpect(jsonPath("$.allFinished").value(true));
-        assertThat(rooms.findByCode(CODE).orElseThrow().getStatus()).isEqualTo(RoomStatus.FINISHED);
+        assertThat(rooms.findByCodeIgnoreCase(CODE).orElseThrow().getStatus()).isEqualTo(RoomStatus.FINISHED);
         String beforeLeave = results(tokens.get(1)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalParticipants").value(4))
                 .andExpect(jsonPath("$.cards.length()").value(3))

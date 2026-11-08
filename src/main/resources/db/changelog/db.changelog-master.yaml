@@ -26,3 +26,12 @@ databaseChangeLog:
   - include:
       file: 009-round-results.yaml
       relativeToChangelogFile: true
+  - include:
+      file: 010-session-archive.sql
+      relativeToChangelogFile: true
+  - include:
+      file: 011-users.sql
+      relativeToChangelogFile: true
+  - include:
+      file: 012-archive-votes.sql
+      relativeToChangelogFile: true

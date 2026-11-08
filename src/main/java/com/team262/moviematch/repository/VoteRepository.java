@@ -9,6 +9,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface VoteRepository extends JpaRepository<Vote, Long> {
+    @EntityGraph(attributePaths = {"participant", "roomTitle"})
+    List<Vote> findAllByRoomTitleRoomId(Long roomId);
     Optional<Vote> findByParticipantIdAndRoomTitleId(Long participantId, Long roomTitleId);
 
     @EntityGraph(attributePaths = "roomTitle")

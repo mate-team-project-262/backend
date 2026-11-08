@@ -1,6 +1,12 @@
 package com.team262.moviematch.exception;
 
 public enum ErrorCode {
+    EMAIL_TAKEN,
+    USERNAME_TAKEN,
+    INVALID_CREDENTIALS,
+    AUTHENTICATION_REQUIRED,
+    PARTICIPANT_ALREADY_LINKED,
+    HISTORY_NOT_FOUND,
     //Spring, @Valid
     VALIDATION_FAILED,
 

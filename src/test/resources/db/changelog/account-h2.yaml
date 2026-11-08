@@ -1,0 +1,32 @@
+databaseChangeLog:
+  - include:
+      file: db/changelog/001-rooms-participants.yaml
+  - include:
+      file: db/changelog/002-participant-tokens.yaml
+  - include:
+      file: db/changelog/003-titles-room-deck.yaml
+  - include:
+      file: db/changelog/004-room-deck-build.yaml
+  - include:
+      file: db/changelog/005-title-genre-names.yaml
+  - include:
+      file: db/changelog/006-title-content-type.yaml
+  - include:
+      file: db/changelog/007-add-room-started-at.yaml
+  - include:
+      file: db/changelog/008-votes.yaml
+  - changeSet:
+      id: test-empty-results-schema
+      author: team262
+      changes:
+        - sql:
+            sql: ALTER TABLE rooms ADD COLUMN result_participant_count INT NULL;
+        - sql:
+            sql: ALTER TABLE room_titles ADD COLUMN result_likes_count INT NOT NULL DEFAULT 0;
+  - include:
+      file: db/changelog/010-session-archive.sql
+  - include:
+      file: db/changelog/011-users.sql
+  - include:
+      file: db/changelog/012-archive-votes.sql
+

@@ -78,7 +78,7 @@ public class RoomDeckServiceImpl implements RoomDeckService {
     }
 
     private Room findRoomByCode(String code) {
-        return roomRepository.findByCode(code).orElseThrow(() ->
+        return roomRepository.findByCodeIgnoreCase(code).orElseThrow(() ->
                 new NotFoundException(ErrorCode.ROOM_NOT_FOUND, "Room not found"));
     }
 

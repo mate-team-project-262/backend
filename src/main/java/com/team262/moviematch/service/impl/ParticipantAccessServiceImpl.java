@@ -24,7 +24,7 @@ public class ParticipantAccessServiceImpl implements ParticipantAccessService {
     @Override
     @Transactional(readOnly = true)
     public Room requireRoomMembership(String code, Participant participant) {
-        Room room = roomRepository.findByCode(code).orElseThrow(() ->
+        Room room = roomRepository.findByCodeIgnoreCase(code).orElseThrow(() ->
                 new NotFoundException(ErrorCode.ROOM_NOT_FOUND, "Room not found"));
         checkMembership(room, participant);
         return room;
@@ -34,7 +34,7 @@ public class ParticipantAccessServiceImpl implements ParticipantAccessService {
     @Transactional(propagation = Propagation.MANDATORY)
     public Participant requireRoomMembershipForUpdate(String code, Participant participant) {
         // Always lock the room before reading the current participant and host flag.
-        Room room = roomRepository.findByCodeForUpdate(code).orElse(null);
+        Room room = roomRepository.findLockedByCodeIgnoreCase(code).orElse(null);
         if (room != null) {
             checkMembership(room, participant);
         }

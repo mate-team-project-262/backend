@@ -170,7 +170,7 @@ class RoomOpenApiIntegrationTest {
     @EnumSource(value = RoomStatus.class, names = {"VOTING", "FINISHED"})
     void documentsNonJoinableStatus(RoomStatus roomStatus) {
         String code = post("/rooms", RoomApiExamples.DEFAULT_REQUEST, 201).path("code").asText();
-        Room room = rooms.findByCode(code).orElseThrow();
+        Room room = rooms.findByCodeIgnoreCase(code).orElseThrow();
         room.setStatus(roomStatus);
         rooms.save(room);
         JsonNode error = post("/rooms/" + code + "/join", RoomApiExamples.JOIN_REQUEST, 409);
