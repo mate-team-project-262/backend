@@ -42,11 +42,12 @@ public class AccountSecurityConfig {
     }
 
     @Bean
-    public UrlBasedCorsConfigurationSource accountCorsSource(
+    public UrlBasedCorsConfigurationSource corsConfigurationSource(
             @Value("${app.frontend-origins:http://localhost:5173}") String origins) {
         CorsConfiguration cors = new CorsConfiguration();
         cors.setAllowedOrigins(Arrays.stream(origins.split(",")).map(String::trim).toList());
-        cors.setAllowedMethods(List.of("GET", "POST", "OPTIONS"));
+        cors.setAllowedMethods(List.of(
+                "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         cors.setAllowedHeaders(List.of("Content-Type", "X-CSRF-TOKEN", "X-Participant-Token"));
         cors.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -58,9 +59,9 @@ public class AccountSecurityConfig {
     @Order(1)
     public SecurityFilterChain accounts(HttpSecurity http, ObjectMapper mapper,
             HttpSessionSecurityContextRepository repository,
-            UrlBasedCorsConfigurationSource accountCorsSource) throws Exception {
+            UrlBasedCorsConfigurationSource corsConfigurationSource) throws Exception {
         return http.securityMatcher("/auth/**", "/me", "/me/**")
-                .cors(cors -> cors.configurationSource(accountCorsSource))
+                .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .securityContext(context -> context.securityContextRepository(repository))
                 .authorizeHttpRequests(auth -> auth.requestMatchers("/auth/**").permitAll()
                         .anyRequest().authenticated())

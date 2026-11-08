@@ -11,11 +11,12 @@ CREATE TABLE game_session_archives (
     CONSTRAINT uk_archive_source_room UNIQUE (source_room_id)
 );
 CREATE TABLE archived_participants (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
     session_id BIGINT NOT NULL,
     source_participant_id BIGINT NOT NULL,
     display_name VARCHAR(20) NOT NULL,
     was_host BIT(1) NOT NULL,
-    PRIMARY KEY (session_id, source_participant_id),
+    CONSTRAINT uk_archived_participant_source UNIQUE (session_id, source_participant_id),
     CONSTRAINT fk_archived_participant_session FOREIGN KEY (session_id)
         REFERENCES game_session_archives(id) ON DELETE CASCADE
 );

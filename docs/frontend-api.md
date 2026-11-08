@@ -192,6 +192,8 @@ Click **Authorize**, paste the token UUID without `Bearer`, then call GET.
 Create and join do not require authorization. Documentation tokens are fictitious;
 use the token from your own successful POST for **Try it out**.
 
-Swagger uses the backend's origin. A frontend on another port/domain needs a
-dev/reverse proxy or an agreed CORS configuration allowing the frontend origin
-and headers (`Content-Type`, `X-Participant-Token`). The backend does not configure CORS.
+Swagger uses the backend's origin. The backend configures CORS globally through
+`CorsConfigurationSource`. Allowed frontend origins are configured with
+`FRONTEND_ORIGINS` and default to `http://localhost:5173`. Cross-origin requests
+may include credentials, and the configured headers include `Content-Type`,
+`X-CSRF-TOKEN` and `X-Participant-Token`.

@@ -34,6 +34,42 @@ class AccountIntegrationTest {
     @Autowired PasswordEncoder encoder;
 
     @Test
+    void corsAllowsConfiguredFrontendForAccountAndGameEndpoints() throws Exception {
+        String frontend = "http://localhost:5173";
+        mvc.perform(options("/auth/login")
+                        .header("Origin", frontend)
+                        .header("Access-Control-Request-Method", "POST"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Access-Control-Allow-Origin", frontend))
+                .andExpect(header().string("Access-Control-Allow-Credentials", "true"));
+        mvc.perform(options("/rooms")
+                        .header("Origin", frontend)
+                        .header("Access-Control-Request-Method", "POST"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Access-Control-Allow-Origin", frontend))
+                .andExpect(header().string("Access-Control-Allow-Credentials", "true"));
+    }
+
+    @Test
+    void openApiDocumentsAccountProfileAndHistoryEndpoints() throws Exception {
+        MvcResult result = mvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isOk())
+                .andReturn();
+        JsonNode api = json.readTree(result.getResponse().getContentAsString());
+        assertThat(api.at("/paths/~1auth~1register/post/summary").asText())
+                .isEqualTo("Register an account");
+        assertThat(api.at("/paths/~1auth~1login/post/summary").asText())
+                .isEqualTo("Sign in by display name");
+        assertThat(api.at("/paths/~1me~1profile/get/summary").asText())
+                .isEqualTo("Get profile statistics");
+        assertThat(api.at("/paths/~1me~1history/get/summary").asText())
+                .isEqualTo("List the current account's game history");
+        assertThat(api.at("/components/securitySchemes/AccountSession").isMissingNode()).isFalse();
+        assertThat(api.at("/components/securitySchemes/CsrfToken").isMissingNode()).isFalse();
+        assertThat(api.at("/components/securitySchemes/ParticipantToken").isMissingNode()).isFalse();
+    }
+
+    @Test
     void guestRegistersLogsInLinksAndLogsOut() throws Exception {
         mvc.perform(get("/me")).andExpect(status().isUnauthorized());
         mvc.perform(post("/auth/register").contentType(MediaType.APPLICATION_JSON).content("{}"))
