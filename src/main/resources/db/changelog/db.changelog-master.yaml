@@ -23,3 +23,6 @@ databaseChangeLog:
   - include:
       file: 008-votes.yaml
       relativeToChangelogFile: true
+  - include:
+      file: 009-round-results.yaml
+      relativeToChangelogFile: true

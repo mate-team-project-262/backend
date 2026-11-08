@@ -20,6 +20,7 @@ import com.team262.moviematch.repository.RoomRepository;
 import com.team262.moviematch.service.ParticipantAccessService;
 import com.team262.moviematch.service.ParticipantTokenService;
 import com.team262.moviematch.service.RoomService;
+import com.team262.moviematch.service.game.GameResultService;
 import com.team262.moviematch.util.RoomCodeGenerator;
 import java.time.LocalDateTime;
 import org.hibernate.exception.ConstraintViolationException;
@@ -41,6 +42,7 @@ public class RoomServiceImpl implements RoomService {
     private final ParticipantRepository participantRepository;
     private final ParticipantTokenService tokenService;
     private final ParticipantAccessService accessService;
+    private final GameResultService gameResults;
     private final RoomCodeGenerator codeGenerator;
     private final RoomMapper mapper;
     private final ParticipantMapper participantMapper;
@@ -50,6 +52,7 @@ public class RoomServiceImpl implements RoomService {
     public RoomServiceImpl(RoomRepository roomRepository,
                            ParticipantRepository participantRepository,
                            ParticipantTokenService tokenService, ParticipantAccessService accessService,
+                           GameResultService gameResults,
                            RoomCodeGenerator codeGenerator,
                            RoomMapper mapper, ParticipantMapper participantMapper, PlatformTransactionManager transactionManager,
                            @Value("${room.max-participants:5}") int maxParticipants) {
@@ -57,6 +60,7 @@ public class RoomServiceImpl implements RoomService {
         this.participantRepository = participantRepository;
         this.tokenService = tokenService;
         this.accessService = accessService;
+        this.gameResults = gameResults;
         this.codeGenerator = codeGenerator;
         this.mapper = mapper;
         this.participantMapper = participantMapper;
@@ -126,6 +130,11 @@ public class RoomServiceImpl implements RoomService {
                 return;
             }
             nextHost.setHost(true);
+        }
+        if (room.getStatus() == RoomStatus.VOTING) {
+            // Flush the participant removal so the database has cascaded their votes.
+            participantRepository.flush();
+            gameResults.finishIfReady(room);
         }
     }
 

@@ -27,4 +27,12 @@ public interface VoteRepository extends JpaRepository<Vote, Long> {
         group by v.participant.id
         """)
     List<ParticipantVoteCount> countVotesByParticipantInRoom(@Param("roomId") Long roomId);
+
+    @Query("""
+        select new com.team262.moviematch.repository.CardLikeCount(v.roomTitle.id, count(v))
+        from Vote v
+        where v.roomTitle.room.id = :roomId and v.liked = true
+        group by v.roomTitle.id
+        """)
+    List<CardLikeCount> countLikesByCardInRoom(@Param("roomId") Long roomId);
 }
