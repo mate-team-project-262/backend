@@ -11,6 +11,8 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class OpenApiConfig {
     public static final String PARTICIPANT_TOKEN = "ParticipantToken";
+    public static final String ACCOUNT_SESSION = "AccountSession";
+    public static final String CSRF_TOKEN = "CsrfToken";
 
     @Bean
     public OpenAPI apiInfo() {
@@ -19,7 +21,7 @@ public class OpenApiConfig {
                         .title("Movie Match API")
                         .version("1.0.0")
                         .description("""
-                                Movie Match Sprint 1 API.
+                                Movie Match API for guest games and registered accounts.
 
                                 1. Create a room with POST /rooms or join one with POST /rooms/{code}/join.
                                 2. Save participant.token from creation or currentParticipant.token from joining.
@@ -37,10 +39,21 @@ public class OpenApiConfig {
                                 without a guaranteed code field. Do not automatically retry POST after a network error:
                                 the request may already have created the room or participant.
                                 """))
-                .components(new Components().addSecuritySchemes(PARTICIPANT_TOKEN,
-                        new SecurityScheme().type(SecurityScheme.Type.APIKEY)
-                                .in(SecurityScheme.In.HEADER)
-                                .name(CurrentParticipantArgumentResolver.HEADER)
-                                .description("Personal participant token. Paste the UUID without Bearer; required only for GET lobby.")));
+                .components(new Components()
+                        .addSecuritySchemes(PARTICIPANT_TOKEN,
+                                new SecurityScheme().type(SecurityScheme.Type.APIKEY)
+                                        .in(SecurityScheme.In.HEADER)
+                                        .name(CurrentParticipantArgumentResolver.HEADER)
+                                        .description("Personal guest participant token. Paste the UUID without Bearer."))
+                        .addSecuritySchemes(ACCOUNT_SESSION,
+                                new SecurityScheme().type(SecurityScheme.Type.APIKEY)
+                                        .in(SecurityScheme.In.COOKIE)
+                                        .name("JSESSIONID")
+                                        .description("HttpOnly account session cookie returned after registration or login."))
+                        .addSecuritySchemes(CSRF_TOKEN,
+                                new SecurityScheme().type(SecurityScheme.Type.APIKEY)
+                                        .in(SecurityScheme.In.HEADER)
+                                        .name("X-CSRF-TOKEN")
+                                        .description("Fetch with GET /auth/csrf and send for POST requests under /auth and /me.")));
     }
 }

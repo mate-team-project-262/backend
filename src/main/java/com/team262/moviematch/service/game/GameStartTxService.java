@@ -67,7 +67,7 @@ public class GameStartTxService {
         if (titleIds.size() != DeckProperties.SIZE) {
             throw new IllegalStateException("Deck must have " + DeckProperties.SIZE + " titles");
         }
-        Room room = roomRepository.findByIdForUpdate(roomId).orElseThrow(
+        Room room = roomRepository.findLockedById(roomId).orElseThrow(
                 () -> new NotFoundException(ErrorCode.ROOM_NOT_FOUND, "Room not found"));
         if (room.getStatus() != RoomStatus.LOBBY
                 || room.getDeckBuildStatus() != DeckBuildStatus.BUILDING) {

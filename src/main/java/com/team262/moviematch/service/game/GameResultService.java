@@ -15,6 +15,7 @@ import com.team262.moviematch.repository.ParticipantVoteCount;
 import com.team262.moviematch.repository.RoomTitleRepository;
 import com.team262.moviematch.repository.VoteRepository;
 import com.team262.moviematch.service.ParticipantAccessService;
+import com.team262.moviematch.service.history.GameSessionArchiveService;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +33,7 @@ public class GameResultService {
     private final RoomTitleRepository roomTitles;
     private final VoteRepository votes;
     private final DeckCardMapper mapper;
+    private final GameSessionArchiveService archiveService;
 
     // Callers hold the room lock through the vote or leave transaction.
     @Transactional(propagation = Propagation.MANDATORY)
@@ -57,6 +59,7 @@ public class GameResultService {
         }
         room.setResultParticipantCount(Math.toIntExact(participantCount));
         room.setStatus(RoomStatus.FINISHED);
+        archiveService.archiveFinishedRoom(room);
     }
 
     @Transactional(readOnly = true)

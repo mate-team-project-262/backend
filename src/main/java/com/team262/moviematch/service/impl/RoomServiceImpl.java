@@ -94,7 +94,7 @@ public class RoomServiceImpl implements RoomService {
     @Override
     @Transactional(readOnly = true)
     public RoomDetailsResponse getLobby(String code, Participant participant) {
-        Room room = roomRepository.findByCode(code).orElseThrow(() ->
+        Room room = roomRepository.findByCodeIgnoreCase(code).orElseThrow(() ->
                 new NotFoundException(ErrorCode.ROOM_NOT_FOUND, "Room not found"));
         if (!room.getId().equals(participant.getRoom().getId())) {
             throw new ForbiddenException(ErrorCode.WRONG_ROOM,
@@ -142,7 +142,7 @@ public class RoomServiceImpl implements RoomService {
     @Transactional
     public JoinRoomResponse joinRoom(String code, JoinRoomRequest request) {
 
-        Room room = roomRepository.findByCodeForUpdate(code).orElseThrow(
+        Room room = roomRepository.findLockedByCodeIgnoreCase(code).orElseThrow(
                 () -> new NotFoundException(ErrorCode.ROOM_NOT_FOUND,
                         "Room with code " + code + " doesn't exist"));
 

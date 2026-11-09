@@ -137,17 +137,17 @@ class RoomPersistenceTests {
 
         flushAndClear();
 
-        assertThat(rooms.findByCode("K7M2QX"))
+        assertThat(rooms.findByCodeIgnoreCase("K7M2QX"))
                 .map(Room::getId)
                 .contains(expected.getId());
 
         entityManager.clear();
 
-        assertThat(rooms.findByCode("k7m2qx"))
+        assertThat(rooms.findByCodeIgnoreCase("k7m2qx"))
                 .map(Room::getId)
                 .contains(expected.getId());
 
-        assertThat(rooms.findByCode("ZZZ999")).isEmpty();
+        assertThat(rooms.findByCodeIgnoreCase("ZZZ999")).isEmpty();
     }
 
     @Test
@@ -420,7 +420,7 @@ class RoomPersistenceTests {
 
         flushAndClear();
 
-        Room loaded = rooms.findByCode("ABC234").orElseThrow();
+        Room loaded = rooms.findByCodeIgnoreCase("ABC234").orElseThrow();
 
         assertThat(loaded.getStatus()).isEqualTo(RoomStatus.LOBBY);
         assertThat(loaded.getContentType()).isEqualTo(ContentType.MOVIES);
