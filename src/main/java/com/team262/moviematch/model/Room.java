@@ -48,6 +48,11 @@ public class Room {
 
     @Getter
     @Setter
+    @Column(name = "result_participant_count")
+    private Integer resultParticipantCount;
+
+    @Getter
+    @Setter
     @Enumerated(EnumType.STRING)
     @Column(name = "deck_build_status", nullable = false, length = 16)
     private DeckBuildStatus deckBuildStatus = DeckBuildStatus.IDLE;

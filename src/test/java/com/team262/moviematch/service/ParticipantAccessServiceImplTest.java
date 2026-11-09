@@ -43,14 +43,14 @@ class ParticipantAccessServiceImplTest {
     @Test
     void returnsRoomWhenParticipantBelongsToIt() {
         Room room = room(1L, "K7M2QX");
-        when(roomRepository.findByCode("K7M2QX")).thenReturn(Optional.of(room));
+        when(roomRepository.findByCodeIgnoreCase("K7M2QX")).thenReturn(Optional.of(room));
 
         assertThat(service.requireRoomMembership("K7M2QX", participantIn(room))).isSameAs(room);
     }
 
     @Test
     void unknownRoom_is404() {
-        when(roomRepository.findByCode("ZZZZZZ")).thenReturn(Optional.empty());
+        when(roomRepository.findByCodeIgnoreCase("ZZZZZZ")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.requireRoomMembership("ZZZZZZ", participantIn(room(1L, "K7M2QX"))))
                 .isInstanceOfSatisfying(NotFoundException.class,
@@ -60,7 +60,7 @@ class ParticipantAccessServiceImplTest {
     @Test
     void participantFromOtherRoom_is403() {
         Room other = room(2L, "ABCDEF");
-        when(roomRepository.findByCode("ABCDEF")).thenReturn(Optional.of(other));
+        when(roomRepository.findByCodeIgnoreCase("ABCDEF")).thenReturn(Optional.of(other));
 
         assertThatThrownBy(() -> service.requireRoomMembership("ABCDEF", participantIn(room(1L, "K7M2QX"))))
                 .isInstanceOfSatisfying(ForbiddenException.class,

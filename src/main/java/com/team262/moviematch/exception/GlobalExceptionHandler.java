@@ -12,6 +12,7 @@ import com.team262.moviematch.exception.ex.UnauthorizedException;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -19,6 +20,12 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
+    public ResponseEntity<ErrorResponse> handleStatus(org.springframework.web.server.ResponseStatusException exception) {
+        return ResponseEntity.status(exception.getStatusCode()).body(new ErrorResponse(
+                "REQUEST_FAILED",
+                exception.getReason() == null ? "Request failed" : exception.getReason(), List.of()));
+    }
     private static final String VALIDATION_ERROR_CODE = "VALIDATION_ERROR";
     private static final String VALIDATION_ERROR_MESSAGE = "Validation failed";
     private static final String INVALID_VALUE = "Invalid value";
@@ -84,6 +91,15 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(buildErrorResponse(
                 e.getCode().name(),
                 e.getMessage(),
+                List.of()
+        ));
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ErrorResponse> handleAuthenticationException(AuthenticationException exception) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(buildErrorResponse(
+                ErrorCode.INVALID_CREDENTIALS.name(),
+                "Invalid name or password",
                 List.of()
         ));
     }

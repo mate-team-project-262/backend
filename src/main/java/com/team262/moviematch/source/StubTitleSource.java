@@ -34,8 +34,8 @@ public class StubTitleSource implements TitleSource {
         DiscoverFilters effective = TitleSourceSupport.filtersOrEmpty(filters);
         List<TitleCandidate> filtered = catalog.stream()
                 .filter(entry -> entry.title().mediaType() == type)
-                .filter(entry -> entry.title().genres().stream().map(TitleGenre::id)
-                        .collect(java.util.stream.Collectors.toSet()).containsAll(effective.genreIds()))
+                .filter(entry -> effective.genreIds().isEmpty()
+                        || entry.title().genres().stream().map(TitleGenre::id).anyMatch(effective.genreIds()::contains))
                 .filter(entry -> effective.maxDurationMinutes() == null
                         || entry.title().runtimeMinutes() <= effective.maxDurationMinutes())
                 .filter(entry -> effective.minVoteCount() == null

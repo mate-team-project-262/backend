@@ -18,6 +18,7 @@ import com.team262.moviematch.model.Room;
 import com.team262.moviematch.model.RoomStatus;
 import com.team262.moviematch.repository.ParticipantRepository;
 import com.team262.moviematch.repository.RoomRepository;
+import com.team262.moviematch.service.game.GameResultService;
 import com.team262.moviematch.service.impl.RoomServiceImpl;
 import com.team262.moviematch.util.RoomCodeGenerator;
 import java.sql.SQLException;
@@ -70,6 +71,9 @@ class RoomServiceTest {
     private ParticipantAccessService access;
 
     @Mock
+    private GameResultService gameResults;
+
+    @Mock
     private RoomCodeGenerator codes;
 
     @Mock
@@ -87,6 +91,7 @@ class RoomServiceTest {
                 participants,
                 tokens,
                 access,
+                gameResults,
                 codes,
                 Mappers.getMapper(RoomMapper.class),
                 participantMapper,
@@ -264,7 +269,7 @@ class RoomServiceTest {
         );
         ReflectionTestUtils.setField(host, "id", 7L);
 
-        when(rooms.findByCode("K7M2QX"))
+        when(rooms.findByCodeIgnoreCase("K7M2QX"))
                 .thenReturn(Optional.of(room));
         when(participants.findAllByRoomIdOrderByIdAsc(1L))
                 .thenReturn(List.of(host));
@@ -280,7 +285,7 @@ class RoomServiceTest {
 
     @Test
     void rejectsOtherRoomBeforeLoadingParticipants() {
-        when(rooms.findByCode("K7M2QX"))
+        when(rooms.findByCodeIgnoreCase("K7M2QX"))
                 .thenReturn(Optional.of(room(1L)));
 
         Participant other = new Participant(
@@ -298,7 +303,7 @@ class RoomServiceTest {
 
     @Test
     void reportsMissingRoom() {
-        when(rooms.findByCode("K7M2QX"))
+        when(rooms.findByCodeIgnoreCase("K7M2QX"))
                 .thenReturn(Optional.empty());
 
         var error = assertThrows(
@@ -336,7 +341,7 @@ class RoomServiceTest {
                 null
         );
 
-        when(rooms.findByCodeForUpdate("K7M2QX"))
+        when(rooms.findLockedByCodeIgnoreCase("K7M2QX"))
                 .thenReturn(Optional.of(room));
         when(participants.countByRoom(room)).thenReturn(1L);
         when(participants.existsByRoomAndNameIgnoreCase(room, "Guest"))
@@ -371,7 +376,7 @@ class RoomServiceTest {
 
     @Test
     void rejectsJoiningWhenRoomDoesNotExist() {
-        when(rooms.findByCodeForUpdate("K7M2QX"))
+        when(rooms.findLockedByCodeIgnoreCase("K7M2QX"))
                 .thenReturn(Optional.empty());
 
         NotFoundException error = assertThrows(
@@ -392,7 +397,7 @@ class RoomServiceTest {
         Room room = room(1L);
         ReflectionTestUtils.setField(room, "status", RoomStatus.VOTING);
 
-        when(rooms.findByCodeForUpdate("K7M2QX"))
+        when(rooms.findLockedByCodeIgnoreCase("K7M2QX"))
                 .thenReturn(Optional.of(room));
 
         ConflictException error = assertThrows(
@@ -413,7 +418,7 @@ class RoomServiceTest {
     void rejectsJoiningWhenRoomIsFull() {
         Room room = room(1L);
 
-        when(rooms.findByCodeForUpdate("K7M2QX"))
+        when(rooms.findLockedByCodeIgnoreCase("K7M2QX"))
                 .thenReturn(Optional.of(room));
         when(participants.countByRoom(room)).thenReturn(5L);
 
@@ -437,7 +442,7 @@ class RoomServiceTest {
     void rejectsJoiningWhenDisplayNameIsAlreadyTaken() {
         Room room = room(1L);
 
-        when(rooms.findByCodeForUpdate("K7M2QX"))
+        when(rooms.findLockedByCodeIgnoreCase("K7M2QX"))
                 .thenReturn(Optional.of(room));
         when(participants.countByRoom(room)).thenReturn(1L);
         when(participants.existsByRoomAndNameIgnoreCase(room, "guest"))
@@ -484,7 +489,7 @@ class RoomServiceTest {
     void join_whileDeckIsBuilding_isRejected() {
         Room room = new Room("K7M2QX");
         room.setDeckBuildStatus(DeckBuildStatus.BUILDING);
-        when(rooms.findByCodeForUpdate("K7M2QX")).thenReturn(Optional.of(room));
+        when(rooms.findLockedByCodeIgnoreCase("K7M2QX")).thenReturn(Optional.of(room));
 
         assertThatThrownBy(() -> service.joinRoom("K7M2QX",
                 new JoinRoomRequest("Egor")))

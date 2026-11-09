@@ -1,6 +1,6 @@
 package com.team262.moviematch.mapper;
 
-import com.team262.moviematch.dto.game.DeckCardResponse;
+import com.team262.moviematch.dto.game.DeckCardDetails;
 import com.team262.moviematch.dto.voc.GenreDto;
 import com.team262.moviematch.model.RoomTitle;
 import com.team262.moviematch.model.StoredGenre;
@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class DeckCardMapper {
-    public DeckCardResponse toResponse(RoomTitle card, Boolean myVote) {
+    public DeckCardDetails toDetails(RoomTitle card) {
         Title title = card.getTitle();
         List<GenreDto> genres = new ArrayList<>();
         for (StoredGenre genre : title.getGenres()) {
@@ -23,11 +23,11 @@ public class DeckCardMapper {
         if (title.getVoteAverage() != null) {
             voteAverage = title.getVoteAverage().doubleValue();
         }
-        return new DeckCardResponse(card.getId(), card.getPosition(), title.getTitle(),
+        return new DeckCardDetails(card.getId(), card.getPosition(), title.getTitle(),
                 title.getReleaseYear(), title.getOverview(), posterUrl(title.getPosterPath()),
                 title.getRuntimeMinutes(), genres, voteAverage, title.getDirector(),
                 List.copyOf(title.getCreators()), List.copyOf(title.getCast()), title.getAgeRating(),
-                title.getBudget(), title.getRevenue(), title.getOriginalLanguage(), myVote);
+                title.getBudget(), title.getRevenue(), title.getOriginalLanguage());
     }
 
     private String posterUrl(String path) {

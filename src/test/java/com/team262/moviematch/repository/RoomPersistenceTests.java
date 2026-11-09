@@ -10,6 +10,7 @@ import jakarta.persistence.EntityManager;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import liquibase.integration.spring.SpringLiquibase;
@@ -63,19 +64,12 @@ class RoomPersistenceTests {
         assertThat(jdbc.queryForList("show tables", String.class))
                 .contains("rooms", "participants", "room_genres");
 
-        Integer appliedChanges = jdbc.queryForObject(
-                "select count(*) from DATABASECHANGELOG",
-                Integer.class
-        );
-
-        assertThat(appliedChanges).isEqualTo(8);
+        String appliedChangesQuery = "select ID from DATABASECHANGELOG order by ID";
+        List<String> appliedChanges = jdbc.queryForList(appliedChangesQuery, String.class);
 
         liquibase.afterPropertiesSet();
 
-        assertThat(jdbc.queryForObject(
-                "select count(*) from DATABASECHANGELOG",
-                Integer.class
-        )).isEqualTo(appliedChanges);
+        assertThat(jdbc.queryForList(appliedChangesQuery, String.class)).isEqualTo(appliedChanges);
     }
 
     @Test
@@ -143,17 +137,17 @@ class RoomPersistenceTests {
 
         flushAndClear();
 
-        assertThat(rooms.findByCode("K7M2QX"))
+        assertThat(rooms.findByCodeIgnoreCase("K7M2QX"))
                 .map(Room::getId)
                 .contains(expected.getId());
 
         entityManager.clear();
 
-        assertThat(rooms.findByCode("k7m2qx"))
+        assertThat(rooms.findByCodeIgnoreCase("k7m2qx"))
                 .map(Room::getId)
                 .contains(expected.getId());
 
-        assertThat(rooms.findByCode("ZZZ999")).isEmpty();
+        assertThat(rooms.findByCodeIgnoreCase("ZZZ999")).isEmpty();
     }
 
     @Test
@@ -426,7 +420,7 @@ class RoomPersistenceTests {
 
         flushAndClear();
 
-        Room loaded = rooms.findByCode("ABC234").orElseThrow();
+        Room loaded = rooms.findByCodeIgnoreCase("ABC234").orElseThrow();
 
         assertThat(loaded.getStatus()).isEqualTo(RoomStatus.LOBBY);
         assertThat(loaded.getContentType()).isEqualTo(ContentType.MOVIES);

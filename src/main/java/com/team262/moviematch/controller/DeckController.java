@@ -47,7 +47,8 @@ public class DeckController {
 
     @PostMapping("/votes")
     @Operation(operationId = "saveVote", summary = "Save a like or skip",
-            description = "Only in VOTING. Repeating the same choice succeeds; changing it returns ALREADY_VOTED.")
+            description = "New votes are accepted in VOTING. Repeating the same choice succeeds "
+                    + "even after the round finishes; changing it returns ALREADY_VOTED.")
     @ApiResponse(responseCode = "200", description = "Personal progress after saving")
     @ApiResponse(responseCode = "400", description = "Invalid request or TITLE_NOT_IN_DECK")
     @ApiResponse(responseCode = "401", description = "INVALID_TOKEN")

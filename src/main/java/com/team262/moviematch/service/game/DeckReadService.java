@@ -42,7 +42,7 @@ public class DeckReadService {
         }
         List<DeckCardResponse> cards = new ArrayList<>();
         for (RoomTitle card : deck) {
-            cards.add(mapper.toResponse(card, myVotes.get(card.getId())));
+            cards.add(new DeckCardResponse(mapper.toDetails(card), myVotes.get(card.getId())));
         }
         return new DeckResponse(room.getCode(), room.getStatus(), room.getContentType(),
                 cards.size(), myVotes.size(), cards);

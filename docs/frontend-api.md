@@ -165,12 +165,35 @@ participants who are still in the room.
 Import [the S3-1 Postman collection](postman/S3-1-leave-room.postman_collection.json),
 set `baseUrl` to your backend and run the requests in order with `TITLE_SOURCE=stub`.
 
+## Round results
+
+The round becomes `FINISHED` when every remaining participant has voted on every
+card. The last vote or a participant leaving can complete the round. The final
+like counts and participant count are saved at that point.
+
+When `GET /rooms/{code}/progress` returns `allFinished: true`, call
+`GET /rooms/{code}/results` with `X-Participant-Token`. It returns an object with
+`totalParticipants` (the count when the round finished) and `cards` (the entire
+deck, including cards with zero likes). Each card includes the display and
+detail fields from the deck, plus `likesCount` and `winner`. Cards are sorted
+by likes descending and then by their original deck position.
+
+- One leader: that card has `winner: true`.
+- Tied leaders: every first-place card has `winner: true`, including a tie at
+  one like each. The host can spin the client-side roulette among these cards.
+- All cards have zero likes: all flags are false. Show **No match this round**.
+
+Before the round finishes the endpoint returns `409 RESULT_NOT_READY`.
+Results stay the same if someone leaves after the round ends.
+
 ## Swagger and frontend connectivity
 
 Click **Authorize**, paste the token UUID without `Bearer`, then call GET.
 Create and join do not require authorization. Documentation tokens are fictitious;
 use the token from your own successful POST for **Try it out**.
 
-Swagger uses the backend's origin. A frontend on another port/domain needs a
-dev/reverse proxy or an agreed CORS configuration allowing the frontend origin
-and headers (`Content-Type`, `X-Participant-Token`). The backend does not configure CORS.
+Swagger uses the backend's origin. The backend configures CORS globally through
+`CorsConfigurationSource`. Allowed frontend origins are configured with
+`FRONTEND_ORIGINS` and default to `http://localhost:5173`. Cross-origin requests
+may include credentials, and the configured headers include `Content-Type`,
+`X-CSRF-TOKEN` and `X-Participant-Token`.

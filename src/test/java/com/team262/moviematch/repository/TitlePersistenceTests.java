@@ -59,11 +59,10 @@ class TitlePersistenceTests {
     void migrationCreatesTablesAndCanRunAgain() throws Exception {
         assertThat(jdbc.queryForList("show tables", String.class))
                 .contains("titles", "room_titles", "title_genres", "title_creators", "title_cast");
-        Integer before = jdbc.queryForObject("select count(*) from DATABASECHANGELOG", Integer.class);
-        assertThat(before).isEqualTo(8);
+        String appliedChangesQuery = "select ID from DATABASECHANGELOG order by ID";
+        List<String> appliedChanges = jdbc.queryForList(appliedChangesQuery, String.class);
         liquibase.afterPropertiesSet();
-        assertThat(jdbc.queryForObject("select count(*) from DATABASECHANGELOG", Integer.class))
-                .isEqualTo(before);
+        assertThat(jdbc.queryForList(appliedChangesQuery, String.class)).isEqualTo(appliedChanges);
     }
 
     @Test

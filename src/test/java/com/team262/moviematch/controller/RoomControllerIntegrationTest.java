@@ -107,7 +107,7 @@ class RoomControllerIntegrationTest {
                 {"displayName":"Host","preferences":{"contentType":"TV_SERIES",
                  "genreIds":[28,35],"maxDurationMinutes":120}}
                 """);
-        Room room = rooms.findByCode("K7M2QX").orElseThrow();
+        Room room = rooms.findByCodeIgnoreCase("K7M2QX").orElseThrow();
         Participant guest = new Participant(room, "Guest", false, null, null);
         String guestToken = tokenService.issueToken(guest);
         room.setStatus(RoomStatus.VOTING);
@@ -299,7 +299,7 @@ class RoomControllerIntegrationTest {
                 .andExpect(status().isNotFound()).andExpect(jsonPath("$.code").value("ROOM_NOT_FOUND"));
         mvc.perform(post("/rooms/K7M2QX/leave").header("X-Participant-Token", host))
                 .andExpect(status().isNoContent());
-        assertThat(rooms.findByCode("K7M2QX")).isEmpty();
+        assertThat(rooms.findByCodeIgnoreCase("K7M2QX")).isEmpty();
         assertThat(participants.findByToken(host)).isEmpty();
         mvc.perform(post("/rooms/K7M2QX/leave").header("X-Participant-Token", host))
                 .andExpect(status().isUnauthorized()).andExpect(jsonPath("$.code").value("INVALID_TOKEN"));
@@ -320,7 +320,7 @@ class RoomControllerIntegrationTest {
     }
 
     @Test
-    void leavingRemovesVotesAndCompletesProgressWithoutChangingVotingStatus() throws Exception {
+    void leavingRemovesVotesAndFinishesVoting() throws Exception {
         String host = token(create("{\"displayName\":\"Host\"}"));
         String guest = join("Guest");
         Participant leaving = participants.findByToken(guest).orElseThrow();
@@ -346,10 +346,10 @@ class RoomControllerIntegrationTest {
         mvc.perform(get("/rooms/K7M2QX/progress").header("X-Participant-Token", host))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.allFinished").value(true));
         mvc.perform(get("/rooms/K7M2QX").header("X-Participant-Token", host))
-                .andExpect(jsonPath("$.status").value("VOTING"));
+                .andExpect(jsonPath("$.status").value("FINISHED"));
         mvc.perform(post("/rooms/K7M2QX/leave").header("X-Participant-Token", host))
                 .andExpect(status().isNoContent());
-        assertThat(rooms.findByCode("K7M2QX")).isEmpty();
+        assertThat(rooms.findByCodeIgnoreCase("K7M2QX")).isEmpty();
         assertThat(votes.count()).isZero();
     }
 
@@ -385,7 +385,7 @@ class RoomControllerIntegrationTest {
             if (startStatus == 401) {
                 assertThat(joinStatus).isEqualTo(201);
             }
-            Room room = rooms.findByCode("K7M2QX").orElseThrow();
+            Room room = rooms.findByCodeIgnoreCase("K7M2QX").orElseThrow();
             assertThat(room.getStatus()).isEqualTo(startStatus == 200 ? RoomStatus.VOTING : RoomStatus.LOBBY);
             var remaining = participants.findAllByRoomIdOrderByIdAsc(room.getId());
             assertThat(remaining).hasSize(joinStatus == 201 ? 3 : 2);

@@ -165,7 +165,7 @@ class GameStartTxServiceTest {
         Room room = room();
         room.setDeckBuildStatus(DeckBuildStatus.BUILDING);
 
-        when(roomRepository.findByIdForUpdate(1L))
+        when(roomRepository.findLockedById(1L))
                 .thenReturn(Optional.of(room));
 
         when(titleRepository.getReferenceById(anyLong()))
@@ -198,7 +198,7 @@ class GameStartTxServiceTest {
     void completeStart_whenNotBuilding_isConflict() {
         Room room = room();
 
-        when(roomRepository.findByIdForUpdate(1L))
+        when(roomRepository.findLockedById(1L))
                 .thenReturn(Optional.of(room));
 
         assertThatThrownBy(() -> service.completeStart(

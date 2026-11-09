@@ -65,7 +65,7 @@ class TmdbTitleSourceTest {
                 .andExpect(queryParam("page", "2"))
                 .andExpect(queryParam("sort_by", "popularity.desc"))
                 .andExpect(queryParam("include_adult", "false"))
-                .andExpect(queryParam("with_genres", "18,35"))
+                .andExpect(queryParam("with_genres", "18%7C35"))
                 .andExpect(queryParam("with_runtime.lte", "120"))
                 .andExpect(queryParam("vote_count.gte", "100"))
                 .andRespond(withSuccess("""
