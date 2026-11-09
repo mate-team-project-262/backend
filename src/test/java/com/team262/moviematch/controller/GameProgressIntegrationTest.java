@@ -17,6 +17,7 @@ import com.team262.moviematch.model.RoomStatus;
 import com.team262.moviematch.model.RoomTitle;
 import com.team262.moviematch.model.Title;
 import com.team262.moviematch.model.Vote;
+import com.team262.moviematch.repository.GameSessionArchiveRepository;
 import com.team262.moviematch.repository.ParticipantRepository;
 import com.team262.moviematch.repository.RoomRepository;
 import com.team262.moviematch.repository.RoomTitleRepository;
@@ -51,6 +52,7 @@ class GameProgressIntegrationTest {
 
     @Autowired private MockMvc mvc;
     @Autowired private ObjectMapper json;
+    @Autowired private GameSessionArchiveRepository archives;
     @Autowired private RoomRepository rooms;
     @Autowired private ParticipantRepository participants;
     @Autowired private TitleRepository titles;
@@ -68,6 +70,7 @@ class GameProgressIntegrationTest {
         people.clear();
         tokens.clear();
         cards.clear();
+        archives.deleteAllInBatch();
         votes.deleteAllInBatch();
         roomTitles.deleteAllInBatch();
         rooms.deleteAllInBatch();
