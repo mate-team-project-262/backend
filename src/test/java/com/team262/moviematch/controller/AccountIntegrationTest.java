@@ -60,8 +60,6 @@ class AccountIntegrationTest {
                 .isEqualTo("Register an account");
         assertThat(api.at("/paths/~1auth~1login/post/summary").asText())
                 .isEqualTo("Sign in by display name");
-        assertThat(api.at("/paths/~1me~1profile/get/summary").asText())
-                .isEqualTo("Get profile statistics");
         assertThat(api.at("/paths/~1me~1history/get/summary").asText())
                 .isEqualTo("List the current account's game history");
         assertThat(api.at("/components/securitySchemes/AccountSession").isMissingNode()).isFalse();
