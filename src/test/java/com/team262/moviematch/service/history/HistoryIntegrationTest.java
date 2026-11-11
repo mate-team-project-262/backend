@@ -43,8 +43,14 @@ class HistoryIntegrationTest {
         TransactionTemplate transaction = new TransactionTemplate(transactions);
         User user = users.save(new User("history@example.com", "hash", "Anna"));
         User stranger = users.save(new User("stranger@example.com", "hash", "Other"));
-        assertThat(profiles.profile(user).sessionsCount()).isZero();
-        assertThat(profiles.profile(user).genreMix()).isEmpty();
+        ProfileResponse empty = profiles.profile(user);
+        assertThat(empty.sessionsCount()).isZero();
+        assertThat(empty.genreMix()).isEmpty();
+        assertThat(empty.favoriteGenre()).isNull();
+        assertThat(empty.leastLikedGenre()).isNull();
+        assertThat(empty.decadeMix()).isEmpty();
+        assertThat(empty.favoriteDecade()).isNull();
+        assertThat(empty.favoriteActors()).isEmpty();
         TestRound round = transaction.execute(status -> {
             Room room = rooms.save(new Room("HIS123"));
             room.setStatus(RoomStatus.VOTING);
@@ -56,6 +62,13 @@ class HistoryIntegrationTest {
             for (int position = 0; position < 20; position++) {
                 Title title = new Title(1000L + position, ContentType.MOVIES, "Film " + position);
                 title.getGenres().add(new StoredGenre(28, "Action"));
+                // PROFILE-STAT-2/3 fixtures: liked cards are positions 0, 1, 2
+                title.setReleaseYear(position < 2 ? 1997 : 2024);
+                title.getCast().add("Zendaya");                       // on every title
+                if (position < 2) {
+                    title.getCast().add("Ryan Gosling");              // on two liked titles
+                }
+                title.getCast().add("Extra " + position);             // one title each: below the actor threshold
                 titles.save(title);
                 RoomTitle card = cards.save(new RoomTitle(room, title, position));
                 votes.save(new Vote(member, card, position < 3));
@@ -95,7 +108,30 @@ class HistoryIntegrationTest {
         assertThat(profile.likedCount()).isEqualTo(3);
         assertThat(profile.favoriteGenre().id()).isEqualTo(28);
         assertThat(profile.favoriteGenre().percentage()).isEqualTo(100.0);
+
+        // PROFILE-STAT-1: Action was rated 20 times, liked 3 -> 17 dislikes = 85%
+        assertThat(profile.leastLikedGenre()).isNotNull();
+        assertThat(profile.leastLikedGenre().id()).isEqualTo(28);
+        assertThat(profile.leastLikedGenre().dislikesCount()).isEqualTo(17);
+        assertThat(profile.leastLikedGenre().ratedCount()).isEqualTo(20);
+        assertThat(profile.leastLikedGenre().dislikePercentage()).isEqualTo(85.0);
+
+        // PROFILE-STAT-2: liked years 1997, 1997, 2024 -> 1990s: 2 (66.7%), 2020s: 1 (33.3%)
+        assertThat(profile.decadeMix()).extracting(ProfileResponse.DecadeStat::decade)
+                .containsExactly(1990, 2020);
+        assertThat(profile.decadeMix()).extracting(ProfileResponse.DecadeStat::percentage)
+                .containsExactly(66.7, 33.3);
+        assertThat(profile.favoriteDecade().label()).isEqualTo("1990s");
+        assertThat(profile.favoriteDecade().likedCount()).isEqualTo(2);
+
+        // PROFILE-STAT-3: Zendaya on 3 liked titles, Ryan Gosling on 2; "Extra N" have 1 each (filtered out)
+        assertThat(profile.favoriteActors()).extracting(ProfileResponse.ActorStat::name)
+                .containsExactly("Zendaya", "Ryan Gosling");
+        assertThat(profile.favoriteActors()).extracting(ProfileResponse.ActorStat::likedTitlesCount)
+                .containsExactly(3L, 2L);
+
         assertThat(history.history(stranger.getId(), 0, 10).items()).isEmpty();
+        assertThat(profiles.profile(stranger).favoriteActors()).isEmpty();
         assertThatThrownBy(() -> history.details(stranger.getId(), sessionId))
                 .isInstanceOf(NotFoundException.class);
     }

@@ -1,9 +1,13 @@
 name: Backend Continuous Deployment (CD)
 
 on:
-  push:
+  workflow_run:
+    workflows: ["Backend CI Pipeline"]
+    types:
+      - completed
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -14,63 +18,48 @@ env:
   IMAGE_NAME: mate-team-project-262/backend
 
 jobs:
-  test:
-    name: Run Unit & Integration Tests
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Source Code
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 21 (Temurin)
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-          cache: maven
-
-      - name: Execute Tests (In-Memory H2)
-        run: mvn clean test -B
-
   build-and-push:
-    name: Build & Push Image to GHCR
-    needs: test
+    name: Build & Push Immutable Image to GHCR
     runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    outputs:
+      sha_tag: ${{ steps.short_sha.outputs.sha_tag }}
     steps:
-      - name: Checkout Source Code
+      - name: 1. Checkout verified source code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
-      - name: Set up Docker Buildx
+      - name: 2. Compute immutable short SHA tag
+        id: short_sha
+        run: |
+          FULL_SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
+          echo "sha_tag=sha-${FULL_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: 3. Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to GitHub Container Registry
+      - name: 4. Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract Docker Metadata (Dual-Tagging)
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=raw,value=latest
-            type=sha,prefix=sha-,format=short
-
-      - name: Build and Push Production Image
+      - name: 5. Build and Push Production Image (:sha and :latest)
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.short_sha.outputs.sha_tag }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
   deploy:
-    name: Deploy to AWS EC2
+    name: Deploy SHA Image to AWS EC2 & Verify Health
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
@@ -82,11 +71,42 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -euo pipefail
-            echo "=== Starting deployment on EC2 ==="
+            TARGET_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build-and-push.outputs.sha_tag }}"
+            echo "=== Deploying immutable backend image: $TARGET_IMAGE ==="
             cd /home/ubuntu/infra/compose
 
+            # 1. Pin the exact immutable sha- tag in .env for reproducibility and rollback tracking
+            if grep -q '^BACKEND_IMAGE=' .env; then
+              sed -i "s|^BACKEND_IMAGE=.*|BACKEND_IMAGE=${TARGET_IMAGE}|" .env
+            else
+              echo "BACKEND_IMAGE=${TARGET_IMAGE}" >> .env
+            fi
+
+            # 2. Pull and recreate backend container
             docker compose pull backend
             docker compose up -d backend
-            docker image prune -f
 
-            echo "=== Deployment finished successfully ==="
+            # 3. Poll real Docker healthcheck status instead of blind sleep
+            echo "Polling moviematch_backend health status..."
+            for i in {1..24}; do
+              STATUS=$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' moviematch_backend)
+              if [ "$STATUS" = "healthy" ]; then
+                echo "Backend container is HEALTHY!"
+                break
+              fi
+              if [ "$i" -eq 24 ]; then
+                echo "ERROR: Backend container failed healthcheck! Dumping logs:"
+                docker compose logs --tail=80 backend
+                exit 1
+              fi
+              echo "Waiting for backend readiness... (attempt $i/24, status: $STATUS)"
+              sleep 5
+            done
+
+            # 4. Reload Nginx gateway to refresh upstream container DNS IP
+            docker exec moviematch_gateway nginx -s reload
+
+            # 5. Post-deploy smoke check
+            curl --fail --silent --show-error http://127.0.0.1:8080/v3/api-docs > /dev/null
+            docker image prune -f
+            echo "=== Backend deployment ($TARGET_IMAGE) verified successfully ==="
