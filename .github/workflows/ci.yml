@@ -7,7 +7,6 @@ on:
       - main
   push:
     branches:
-      - develop
       - main
 
 permissions:
@@ -15,23 +14,26 @@ permissions:
 
 jobs:
   verify-and-build-docker:
-    name: Maven Verify (H2 Smoke Test) & Docker Build
+    name: Maven Verify (MySQL Testcontainers) & Docker Build
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     steps:
       - name: 1. Checkout repository code
         uses: actions/checkout@v4
 
-      - name: 2. Setup Java 21 LTS with Maven cache
+      - name: 2. Verify Docker daemon availability for Testcontainers
+        run: docker info > /dev/null
+
+      - name: 3. Setup Java 21 LTS with Maven cache
         uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: 3. Run Maven verify (Context, Security & Liquibase H2 tests)
+      - name: 4. Run Maven verify (Unit, Liquibase & MySQL Testcontainers integration tests)
         run: mvn clean verify -B
 
-      - name: 4. Verify production Docker image build
+      - name: 5. Verify production multi-stage Docker image build
         run: docker build -t team262-backend:${{ github.sha }} .
