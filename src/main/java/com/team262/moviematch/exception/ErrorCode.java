@@ -20,6 +20,7 @@ public enum ErrorCode {
     // ForbiddenException
     NOT_HOST,
     WRONG_ROOM,
+    INVALID_PASSWORD,
 
     // NotFoundException
     ROOM_NOT_FOUND,
