@@ -22,5 +22,13 @@ public class User {
         this.passwordHash = passwordHash;
         this.displayName = displayName;
     }
+
+    public void changeDisplayName(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public void changeEmail(String email) {
+        this.email = email;
+    }
 }
 
