@@ -36,8 +36,8 @@ public final class AccountApiExamples {
             {"code": "AUTHENTICATION_REQUIRED", "message": "Sign in to continue", "fieldErrors": []}
             """;
 
-    public static final String INVALID_PASSWORD = """
-            {"code": "INVALID_PASSWORD", "message": "Current password is incorrect", "fieldErrors": []}
+    public static final String INVALID_CURRENT_PASSWORD = """
+            {"code": "INVALID_CURRENT_PASSWORD", "message": "Current password is incorrect", "fieldErrors": []}
             """;
 
     public static final String CSRF_DENIED = """

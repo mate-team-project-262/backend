@@ -161,8 +161,8 @@ class AccountProfileIntegrationTest {
                 .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
                 .andExpect(jsonPath("$.fieldErrors[0].field").value("currentPassword"));
         patch(account, "{\"email\":\"" + newEmail + "\",\"currentPassword\":\"wrongPassword1\"}")
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.code").value("INVALID_PASSWORD"));
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_CURRENT_PASSWORD"));
         // nothing was changed
         mvc.perform(get("/me").session(account.session()))
                 .andExpect(jsonPath("$.email").value(account.email()));
@@ -180,8 +180,8 @@ class AccountProfileIntegrationTest {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value("EMAIL_TAKEN"));
         patch(second, "{\"email\":\"" + first.email() + "\",\"currentPassword\":\"wrongPassword1\"}")
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.code").value("INVALID_PASSWORD"));            // no email enumeration
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_CURRENT_PASSWORD"));            // no email enumeration
     }
 
     @Test

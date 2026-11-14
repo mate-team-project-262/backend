@@ -30,5 +30,9 @@ public class User {
     public void changeEmail(String email) {
         this.email = email;
     }
+
+    public void changePasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
+    }
 }
 

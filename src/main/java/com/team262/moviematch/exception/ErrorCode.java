@@ -13,6 +13,7 @@ public enum ErrorCode {
     // BadRequestException
     INVALID_PREFERENCES,
     TITLE_NOT_IN_DECK,
+    INVALID_CURRENT_PASSWORD,
 
     //UnauthorizedException
     INVALID_TOKEN,
@@ -20,7 +21,6 @@ public enum ErrorCode {
     // ForbiddenException
     NOT_HOST,
     WRONG_ROOM,
-    INVALID_PASSWORD,
 
     // NotFoundException
     ROOM_NOT_FOUND,
@@ -35,6 +35,7 @@ public enum ErrorCode {
     ROOM_NOT_VOTING,
     ALREADY_VOTED,
     RESULT_NOT_READY,
+    PASSWORD_NOT_CHANGED,
 
     //ExternalServiceException
     TMDB_UNAVAILABLE,

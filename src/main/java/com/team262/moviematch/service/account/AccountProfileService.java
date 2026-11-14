@@ -4,7 +4,7 @@ import com.team262.moviematch.dto.account.UpdateAccountRequest;
 import com.team262.moviematch.dto.error.FieldErrorResponse;
 import com.team262.moviematch.exception.ErrorCode;
 import com.team262.moviematch.exception.ex.ConflictException;
-import com.team262.moviematch.exception.ex.ForbiddenException;
+import com.team262.moviematch.exception.ex.BadRequestException;
 import com.team262.moviematch.exception.ex.RequestValidationException;
 import com.team262.moviematch.exception.ex.UnauthorizedException;
 import com.team262.moviematch.model.User;
@@ -28,7 +28,7 @@ public class AccountProfileService {
      * Order of checks (it is part of the contract):
      * 1. at least one field sent                        -> 400 VALIDATION_ERROR
      * 2. email changes and no currentPassword           -> 400 VALIDATION_ERROR (field currentPassword)
-     * 3. email changes and currentPassword is wrong     -> 403 INVALID_PASSWORD
+     * 3. email changes and currentPassword is wrong     -> 403 INVALID_CURRENT_PASSWORD
      * 4. display name taken by another account          -> 409 USERNAME_TAKEN
      * 5. email taken by another account                 -> 409 EMAIL_TAKEN
      * The password is checked BEFORE the email conflict, so nobody can find out which emails are
@@ -81,7 +81,7 @@ public class AccountProfileService {
                     "currentPassword", "Current password is required to change the email")));
         }
         if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
-            throw new ForbiddenException(ErrorCode.INVALID_PASSWORD, "Current password is incorrect");
+            throw new BadRequestException("Current password is incorrect", ErrorCode.INVALID_CURRENT_PASSWORD);
         }
     }
 

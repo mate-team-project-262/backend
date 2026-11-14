@@ -74,7 +74,7 @@ public class AccountController {
             description = "Send displayName, email or both (at least one). displayName: 3-20 characters, unique "
                     + "ignoring case; email: valid and unique, stored in lowercase. Spaces around values are "
                     + "trimmed; an empty value is an error. Changing the email requires currentPassword "
-                    + "(403 INVALID_PASSWORD if it is wrong); changing only the name does not. "
+                    + "(403 INVALID_CURRENT_PASSWORD if it is wrong); changing only the name does not. "
                     + "Values equal to the current ones change nothing. "
                     + "Sign-in uses the display name, so the new name is used from the next sign-in; the current "
                     + "session stays valid. Finished games in the history keep the name used at the time. "
@@ -88,23 +88,22 @@ public class AccountController {
                     schema = @Schema(implementation = UserResponse.class),
                     examples = @ExampleObject(value = AccountApiExamples.UPDATE_RESPONSE)))
     @ApiResponse(responseCode = "400", description = "VALIDATION_ERROR: invalid field, no field sent, "
-            + "or currentPassword missing when the email changes. fieldErrors names the fields; "
-            + "field 'request' means the whole body.",
+            + "or currentPassword missing when the email changes (field 'request' means the whole body); "
+            + "INVALID_CURRENT_PASSWORD: currentPassword is wrong.",
             content = @Content(mediaType = "application/json",
                     schema = @Schema(implementation = ErrorResponse.class), examples = {
                     @ExampleObject(name = "Invalid field", value = AccountApiExamples.VALIDATION_ERROR_FIELD),
                     @ExampleObject(name = "Empty request", value = AccountApiExamples.EMPTY_REQUEST),
-                    @ExampleObject(name = "Password required", value = AccountApiExamples.PASSWORD_REQUIRED)}))
+                    @ExampleObject(name = "Password required", value = AccountApiExamples.PASSWORD_REQUIRED),
+                    @ExampleObject(name = "Wrong current password", value = AccountApiExamples.INVALID_CURRENT_PASSWORD)}))
     @ApiResponse(responseCode = "401", description = "AUTHENTICATION_REQUIRED: no valid account session",
             content = @Content(mediaType = "application/json",
                     schema = @Schema(implementation = ErrorResponse.class),
                     examples = @ExampleObject(value = AccountApiExamples.AUTHENTICATION_REQUIRED)))
-    @ApiResponse(responseCode = "403", description = "INVALID_PASSWORD (wrong currentPassword) "
-            + "or ACCESS_DENIED (missing or invalid CSRF token)",
+    @ApiResponse(responseCode = "403", description = "ACCESS_DENIED: missing or invalid CSRF token",
             content = @Content(mediaType = "application/json",
-                    schema = @Schema(implementation = ErrorResponse.class), examples = {
-                    @ExampleObject(name = "Wrong password", value = AccountApiExamples.INVALID_PASSWORD),
-                    @ExampleObject(name = "CSRF", value = AccountApiExamples.CSRF_DENIED)}))
+                    schema = @Schema(implementation = ErrorResponse.class),
+                    examples = @ExampleObject(value = AccountApiExamples.CSRF_DENIED)))
     @ApiResponse(responseCode = "409", description = "USERNAME_TAKEN or EMAIL_TAKEN (used by another account)",
             content = @Content(mediaType = "application/json",
                     schema = @Schema(implementation = ErrorResponse.class), examples = {
