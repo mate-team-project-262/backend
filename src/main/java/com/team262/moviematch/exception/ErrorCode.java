@@ -35,6 +35,7 @@ public enum ErrorCode {
     ROOM_NOT_VOTING,
     ALREADY_VOTED,
     RESULT_NOT_READY,
+    PASSWORD_NOT_CHANGED,
 
     //ExternalServiceException
     TMDB_UNAVAILABLE,
