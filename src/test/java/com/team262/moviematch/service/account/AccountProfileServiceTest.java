@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 import com.team262.moviematch.dto.account.UpdateAccountRequest;
 import com.team262.moviematch.dto.error.FieldErrorResponse;
 import com.team262.moviematch.exception.ErrorCode;
+import com.team262.moviematch.exception.ex.BadRequestException;
 import com.team262.moviematch.exception.ex.ConflictException;
 import com.team262.moviematch.exception.ex.ForbiddenException;
 import com.team262.moviematch.exception.ex.RequestValidationException;
@@ -123,13 +124,13 @@ class AccountProfileServiceTest {
     }
 
     @Test
-    void wrongPasswordIsForbiddenAndIsCheckedBeforeEmailConflict() {
+    void wrongPasswordIsRejectedBeforeEmailConflict() {
         existingUser(user());
         when(passwordEncoder.matches("wrong", "stored-hash")).thenReturn(false);
 
         assertThatThrownBy(() -> service.update(ID, request(null, "taken@example.com", "wrong")))
-                .isInstanceOfSatisfying(ForbiddenException.class,
-                        e -> assertThat(e.getCode()).isEqualTo(ErrorCode.INVALID_PASSWORD));
+                .isInstanceOfSatisfying(BadRequestException.class,
+                        e -> assertThat(e.getCode()).isEqualTo(ErrorCode.INVALID_CURRENT_PASSWORD));
         // nobody can learn which emails are registered without the password
         verify(users, never()).existsByEmailAndIdNot(any(), any());
         verify(users, never()).saveAndFlush(any());
