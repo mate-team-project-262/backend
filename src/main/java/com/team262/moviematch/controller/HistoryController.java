@@ -24,7 +24,9 @@ public class HistoryController {
     private final HistoryService history;
     @GetMapping("/me/history")
     @Operation(summary = "List the current account's game history",
-            description = "Returns newest sessions first. Only sessions linked to the current account are visible.",
+            description = "Returns newest sessions first. Each summary contains totalCards, the first three "
+                    + "cards as previewTitles, and winnerTitles with final likesCount. Only sessions linked to "
+                    + "the current account are visible.",
             security = @SecurityRequirement(name = OpenApiConfig.ACCOUNT_SESSION))
     @ApiResponse(responseCode = "200", description = "History page",
             content = @Content(schema = @Schema(implementation = HistoryPage.class)))
@@ -39,7 +41,8 @@ public class HistoryController {
     }
     @GetMapping("/me/history/{sessionId}")
     @Operation(summary = "Get one finished game",
-            description = "Returns participants, all cards, final like counts and the current account's reactions.",
+            description = "Returns participants, all cards with genres, final like counts and the current "
+                    + "account's reactions.",
             security = @SecurityRequirement(name = OpenApiConfig.ACCOUNT_SESSION))
     @ApiResponse(responseCode = "200", description = "Finished session details",
             content = @Content(schema = @Schema(implementation = Details.class)))

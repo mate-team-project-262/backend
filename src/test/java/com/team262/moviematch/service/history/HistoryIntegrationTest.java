@@ -97,6 +97,18 @@ class HistoryIntegrationTest {
         assertThat(before.cards()).hasSize(20);
         assertThat(before.session().likedCount()).isEqualTo(3);
         assertThat(before.session().winnerTitles()).hasSize(1);
+        assertThat(before.session().winnerTitles().getFirst().likesCount()).isEqualTo(2);
+        assertThat(before.session().winnerTitles().getFirst().genres())
+                .extracting(com.team262.moviematch.dto.voc.GenreDto::name)
+                .containsExactly("Action");
+        assertThat(before.session().totalCards()).isEqualTo(20);
+        assertThat(before.session().previewTitles()).hasSize(3);
+        assertThat(before.session().previewTitles())
+                .extracting(HistoryDtos.TitleDto::title)
+                .containsExactly("Film 0", "Film 1", "Film 2");
+        assertThat(before.session().previewTitles().getFirst().genres())
+                .extracting(com.team262.moviematch.dto.voc.GenreDto::id)
+                .containsExactly(28);
         assertThat(before.cards().getFirst().likesCount()).isEqualTo(2);
         assertThat(before.cards().getFirst().myVote()).isTrue();
         transaction.executeWithoutResult(status -> rooms.deleteById(round.roomId()));

@@ -1,8 +1,10 @@
 package com.team262.moviematch.service.history;
 import com.team262.moviematch.dto.history.HistoryDtos.*;
+import com.team262.moviematch.dto.voc.GenreDto;
 import com.team262.moviematch.exception.ErrorCode;
 import com.team262.moviematch.exception.ex.NotFoundException;
 import com.team262.moviematch.model.Title;
+import com.team262.moviematch.model.history.ArchivedCard;
 import com.team262.moviematch.model.history.GameSessionArchive;
 import com.team262.moviematch.model.history.ArchivedVote;
 import com.team262.moviematch.repository.GameSessionArchiveRepository;
@@ -47,9 +49,12 @@ public class HistoryService {
         Set<Long> mine = participantIds(session, userId);
         List<ArchivedVote> votes = session.getVotes().stream()
                 .filter(vote -> mine.contains(vote.getSourceParticipantId())).toList();
+        List<ArchivedCard> orderedCards = session.getCards().stream()
+                .sorted(Comparator.comparingInt(ArchivedCard::getPosition)).toList();
         return new Summary(session.getId(), session.getFinishedAt(), session.getContentType(),
-                session.getParticipantCount(), session.getCards().stream().filter(card -> card.isWinner())
-                        .map(card -> title(card.getTitle())).toList(),
+                session.getParticipantCount(), orderedCards.size(),
+                orderedCards.stream().filter(ArchivedCard::isWinner).map(this::winner).toList(),
+                orderedCards.stream().limit(3).map(card -> title(card.getTitle())).toList(),
                 votes.size(), votes.stream().filter(vote -> vote.isLiked()).count());
     }
     private Set<Long> participantIds(GameSessionArchive session, Long userId) {
@@ -62,7 +67,17 @@ public class HistoryService {
                 (path.startsWith("/demo/") || path.startsWith("https://") || path.startsWith("http://")
                         ? path : "https://image.tmdb.org/t/p/w500" + path);
         return new TitleDto(title.getId(), title.getTitle(), title.getReleaseYear(), url,
-                title.getRuntimeMinutes(), title.getVoteAverage());
+                title.getRuntimeMinutes(), title.getVoteAverage(), genres(title));
+    }
+    private WinnerTitleDto winner(ArchivedCard card) {
+        TitleDto title = title(card.getTitle());
+        return new WinnerTitleDto(title.id(), title.title(), title.year(), title.posterUrl(),
+                title.runtimeMinutes(), title.voteAverage(), title.genres(), card.getLikesCount());
+    }
+    private List<GenreDto> genres(Title title) {
+        return title.getGenres().stream()
+                .sorted(Comparator.comparingInt(genre -> genre.getId()))
+                .map(genre -> new GenreDto(genre.getId(), genre.getName())).toList();
     }
 }
 
