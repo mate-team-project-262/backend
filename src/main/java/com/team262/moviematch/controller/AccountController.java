@@ -74,7 +74,7 @@ public class AccountController {
             description = "Send displayName, email or both (at least one). displayName: 3-20 characters, unique "
                     + "ignoring case; email: valid and unique, stored in lowercase. Spaces around values are "
                     + "trimmed; an empty value is an error. Changing the email requires currentPassword "
-                    + "(403 INVALID_CURRENT_PASSWORD if it is wrong); changing only the name does not. "
+                    + "(400 INVALID_CURRENT_PASSWORD if it is wrong); changing only the name does not. "
                     + "Values equal to the current ones change nothing. "
                     + "Sign-in uses the display name, so the new name is used from the next sign-in; the current "
                     + "session stays valid. Finished games in the history keep the name used at the time. "
