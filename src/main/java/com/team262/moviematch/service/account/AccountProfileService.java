@@ -23,6 +23,7 @@ public class AccountProfileService {
 
     private final UserRepository users;
     private final PasswordEncoder passwordEncoder;
+    private final PasswordResetService resets;
 
     /**
      * Order of checks (it is part of the contract):
@@ -66,6 +67,7 @@ public class AccountProfileService {
             user.changeDisplayName(newName);
         }
         if (emailChanges) {
+            resets.cancel(userId);
             user.changeEmail(newEmail);
         }
         try {

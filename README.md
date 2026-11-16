@@ -230,3 +230,13 @@ See [algorithm, limits, concurrency and verification](docs/room-decks.md).
 `POST /rooms/{code}/votes` saves a like or skip and returns personal progress.
 Both require `X-Participant-Token` and never call TMDB. Repeating the same choice
 succeeds; changing a saved choice returns `409 ALREADY_VOTED`.
+# Password reset
+
+Configure SMTP and the frontend reset page URL with the MAIL_* and FRONTEND_URL
+variables documented in .env.example. In production FRONTEND_URL must be the
+public HTTPS frontend origin. The backend emails a 20-minute one-time link to
+`/reset-password?token=...`. The frontend calls GET /auth/reset-password/check,
+then POST /auth/reset-password with the token and new password. POST endpoints
+need the cookie and X-CSRF-TOKEN from GET /auth/csrf; account sign-in is not
+required. A successful reset revokes account sessions. Do not log query strings
+for the check endpoint at the reverse proxy.

@@ -29,4 +29,6 @@ databaseChangeLog:
       file: db/changelog/011-users.sql
   - include:
       file: db/changelog/012-archive-votes.sql
+  - include:
+      file: db/changelog/013-password-reset.sql
 

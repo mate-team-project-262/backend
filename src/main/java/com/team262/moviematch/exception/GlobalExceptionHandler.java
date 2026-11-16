@@ -9,6 +9,8 @@ import com.team262.moviematch.exception.ex.ExternalServiceException;
 import com.team262.moviematch.exception.ex.ForbiddenException;
 import com.team262.moviematch.exception.ex.NotFoundException;
 import com.team262.moviematch.exception.ex.RequestValidationException;
+import com.team262.moviematch.exception.ex.ResetRateLimitException;
+import com.team262.moviematch.exception.ex.ResetQueueFullException;
 import com.team262.moviematch.exception.ex.UnauthorizedException;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -21,6 +23,17 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    @ExceptionHandler(ResetRateLimitException.class)
+    public ResponseEntity<ErrorResponse> handleResetLimit(ResetRateLimitException exception) {
+        return ResponseEntity.status(429).header("Retry-After", Long.toString(exception.getRetryAfter()))
+                .body(new ErrorResponse("TOO_MANY_REQUESTS", exception.getMessage(), List.of()));
+    }
+
+    @ExceptionHandler(ResetQueueFullException.class)
+    public ResponseEntity<ErrorResponse> handleResetQueue(ResetQueueFullException exception) {
+        return ResponseEntity.status(503)
+                .body(new ErrorResponse("RESET_UNAVAILABLE", exception.getMessage(), List.of()));
+    }
     @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
     public ResponseEntity<ErrorResponse> handleStatus(org.springframework.web.server.ResponseStatusException exception) {
         return ResponseEntity.status(exception.getStatusCode()).body(new ErrorResponse(
@@ -72,10 +85,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ConflictException.class)
     public ResponseEntity<ErrorResponse> handleConflictException(ConflictException e) {
+        List<FieldErrorResponse> fields = e.getCode() == ErrorCode.PASSWORD_NOT_CHANGED
+                ? List.of(new FieldErrorResponse("newPassword", e.getMessage())) : List.of();
         return ResponseEntity.status(HttpStatus.CONFLICT).body(buildErrorResponse(
                 e.getCode().name(),
                 e.getMessage(),
-                List.of()
+                fields
         ));
     }
 
