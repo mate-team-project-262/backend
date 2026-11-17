@@ -15,6 +15,7 @@ import com.team262.moviematch.repository.ParticipantVoteCount;
 import com.team262.moviematch.repository.RoomTitleRepository;
 import com.team262.moviematch.repository.VoteRepository;
 import com.team262.moviematch.service.ParticipantAccessService;
+import com.team262.moviematch.service.analytics.AnalyticsRecorder;
 import com.team262.moviematch.service.history.GameSessionArchiveService;
 import java.util.Comparator;
 import java.util.List;
@@ -34,6 +35,7 @@ public class GameResultService {
     private final VoteRepository votes;
     private final DeckCardMapper mapper;
     private final GameSessionArchiveService archiveService;
+    private final AnalyticsRecorder analytics;
 
     // Callers hold the room lock through the vote or leave transaction.
     @Transactional(propagation = Propagation.MANDATORY)
@@ -54,12 +56,25 @@ public class GameResultService {
 
         Map<Long, Long> likes = votes.countLikesByCardInRoom(room.getId()).stream()
                 .collect(Collectors.toMap(CardLikeCount::roomTitleId, CardLikeCount::likesCount));
-        for (RoomTitle card : roomTitles.findAllByRoomIdOrderByPositionAsc(room.getId())) {
+        List<RoomTitle> cards = roomTitles.findAllByRoomIdOrderByPositionAsc(room.getId());
+        for (RoomTitle card : cards) {
             card.setResultLikesCount(Math.toIntExact(likes.getOrDefault(card.getId(), 0L)));
         }
         room.setResultParticipantCount(Math.toIntExact(participantCount));
         room.setStatus(RoomStatus.FINISHED);
         archiveService.archiveFinishedRoom(room);
+        recordWinners(room, cards, Math.toIntExact(participantCount));
+    }
+
+    /** Same rule as the results screen and the archive: the most liked cards, if anything was liked at all. */
+    private void recordWinners(Room room, List<RoomTitle> cards, int participantCount) {
+        int mostLikes = cards.stream().mapToInt(RoomTitle::getResultLikesCount).max().orElse(0);
+        if (mostLikes > 0) {
+            List<RoomTitle> winners = cards.stream()
+                    .filter(card -> card.getResultLikesCount() == mostLikes)
+                    .toList();
+            analytics.movieWon(room, winners, mostLikes, participantCount);
+        }
     }
 
     @Transactional(readOnly = true)

@@ -19,6 +19,7 @@ import com.team262.moviematch.service.ParticipantAccessService;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -82,6 +83,7 @@ public class GameStartTxService {
         room.setStatus(RoomStatus.VOTING);
         room.setDeckBuildStatus(DeckBuildStatus.READY);
         room.setStartedAt(Instant.now());
+        room.setGameSessionId(UUID.randomUUID().toString());     // analytics: one id per started game
         return new StartGameResponse(room.getCode(), room.getStatus(), cards.size());
     }
     //After an error: BUILDING -> FAILED (the room remains in the LOBBY; the host can retry).
@@ -94,5 +96,4 @@ public class GameStartTxService {
         return new ConflictException(ErrorCode.ROOM_ALREADY_STARTED,
                 "Game has already started or is being started");
     }
-
 }

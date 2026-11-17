@@ -27,7 +27,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Not @Transactional on purpose: the writer owns the transaction, so a unique-constraint error from a
- * concurrent retry can be caught here.
+ * concurrent retry can be caught here (same pattern as TitleStoreService).
  */
 @Slf4j
 @Service
@@ -58,7 +58,7 @@ public class AnalyticsIntakeService {
     }
 
     /** Who sent the events, as far as the server knows. Every part may be null. */
-    private record Context(Long userId, Long participantId, Long roomId) {
+    private record Context(Long userId, Long participantId, Long roomId, String gameSessionId) {
     }
 
     public void collect(String body, Long userId, String participantToken) {
@@ -82,7 +82,8 @@ public class AnalyticsIntakeService {
         List<AnalyticsEvent> toSave = withoutDuplicates(accepted).stream()
                 .map(event -> new AnalyticsEvent(event.eventId(), event.name(), EventSource.FRONTEND,
                         event.occurredAt(), receivedAt, event.clientSessionId(), event.page(),
-                        context.userId(), context.participantId(), context.roomId(), event.propertiesJson()))
+                        context.userId(), context.participantId(), context.roomId(),
+                        context.gameSessionId(), event.propertiesJson()))
                 .toList();
         count("duplicate", "duplicate_event_id", accepted.size() - toSave.size());
         if (toSave.isEmpty()) {
@@ -148,21 +149,23 @@ public class AnalyticsIntakeService {
 
     /**
      * The participant token only comes with fetch (sendBeacon cannot set headers). A missing, wrong or
-     * expired token is not an error: the events are stored without participant and room.
+     * expired token is not an error: the events are stored without participant, room and game session.
      */
     private Context context(Long userId, String participantToken) {
         Long participantId = null;
         Long roomId = null;
+        String gameSessionId = null;
         if (participantToken != null && !participantToken.isBlank()) {
             try {
                 Participant participant = participantTokens.requireParticipant(participantToken.trim());
                 participantId = participant.getId();
                 roomId = participant.getRoom().getId();
+                gameSessionId = participant.getRoom().getGameSessionId();
             } catch (UnauthorizedException ignored) {
                 // analytics must not depend on a valid token
             }
         }
-        return new Context(userId, participantId, roomId);
+        return new Context(userId, participantId, roomId, gameSessionId);
     }
 
     private void count(String result, String reason, int amount) {

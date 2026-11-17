@@ -46,6 +46,10 @@ public class Room {
     @Column(name = "started_at")
     private Instant startedAt;
 
+    /** Identifies one started game (analytics). A new value is set every time the deck is saved and voting starts. */
+    @Column(name = "game_session_id", length = 36)
+    private String gameSessionId;
+
     @Getter
     @Setter
     @Column(name = "result_participant_count")
@@ -123,6 +127,14 @@ public class Room {
 
     public void setStartedAt(Instant startedAt) {
         this.startedAt = startedAt;
+    }
+
+    public String getGameSessionId() {
+        return gameSessionId;
+    }
+
+    public void setGameSessionId(String gameSessionId) {
+        this.gameSessionId = gameSessionId;
     }
 
     @Override

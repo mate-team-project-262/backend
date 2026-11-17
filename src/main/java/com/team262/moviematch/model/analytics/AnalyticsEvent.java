@@ -60,12 +60,16 @@ public class AnalyticsEvent {
     @Column(name = "room_id", updatable = false)
     private Long roomId;
 
+    /** The voting session ("session_id" in the analytics specification): one started game of a room. */
+    @Column(name = "game_session_id", length = 36, updatable = false)
+    private String gameSessionId;
+
     @Column(name = "properties_json", columnDefinition = "TEXT", updatable = false)
     private String propertiesJson;
 
     public AnalyticsEvent(String eventId, String name, EventSource source, Instant occurredAt,
                           Instant receivedAt, String clientSessionId, String page, Long userId,
-                          Long participantId, Long roomId, String propertiesJson) {
+                          Long participantId, Long roomId, String gameSessionId, String propertiesJson) {
         this.eventId = eventId;
         this.name = name;
         this.source = source;
@@ -76,6 +80,15 @@ public class AnalyticsEvent {
         this.userId = userId;
         this.participantId = participantId;
         this.roomId = roomId;
+        this.gameSessionId = gameSessionId;
         this.propertiesJson = propertiesJson;
+    }
+
+    /** Without a game session (kept so that existing callers and tests do not change). */
+    public AnalyticsEvent(String eventId, String name, EventSource source, Instant occurredAt,
+                          Instant receivedAt, String clientSessionId, String page, Long userId,
+                          Long participantId, Long roomId, String propertiesJson) {
+        this(eventId, name, source, occurredAt, receivedAt, clientSessionId, page, userId,
+                participantId, roomId, null, propertiesJson);
     }
 }

@@ -31,4 +31,6 @@ databaseChangeLog:
       file: db/changelog/012-archive-votes.sql
   - include:
       file: db/changelog/013-analytics-events.yaml
+  - include:
+      file: db/changelog/014-game-session-id.yaml
 
