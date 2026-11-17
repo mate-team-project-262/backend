@@ -14,6 +14,7 @@ public enum ErrorCode {
     INVALID_PREFERENCES,
     TITLE_NOT_IN_DECK,
     INVALID_CURRENT_PASSWORD,
+    INVALID_EVENT_BATCH,
 
     //UnauthorizedException
     INVALID_TOKEN,
