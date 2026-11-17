@@ -10,7 +10,6 @@ import com.team262.moviematch.exception.ex.ForbiddenException;
 import com.team262.moviematch.exception.ex.NotFoundException;
 import com.team262.moviematch.exception.ex.RequestValidationException;
 import com.team262.moviematch.exception.ex.ResetRateLimitException;
-import com.team262.moviematch.exception.ex.ResetQueueFullException;
 import com.team262.moviematch.exception.ex.UnauthorizedException;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -29,11 +28,6 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse("TOO_MANY_REQUESTS", exception.getMessage(), List.of()));
     }
 
-    @ExceptionHandler(ResetQueueFullException.class)
-    public ResponseEntity<ErrorResponse> handleResetQueue(ResetQueueFullException exception) {
-        return ResponseEntity.status(503)
-                .body(new ErrorResponse("RESET_UNAVAILABLE", exception.getMessage(), List.of()));
-    }
     @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
     public ResponseEntity<ErrorResponse> handleStatus(org.springframework.web.server.ResponseStatusException exception) {
         return ResponseEntity.status(exception.getStatusCode()).body(new ErrorResponse(

@@ -19,11 +19,13 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
+@EnableAsync
 public class AccountSecurityConfig {
     @Bean
     public FilterRegistrationBean<AccountSessionVersionFilter> accountVersionFilterRegistration(

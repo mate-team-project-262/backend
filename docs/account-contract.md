@@ -60,8 +60,7 @@ Forgot-password is limited to one request per email per minute and additionally
 per IP. Check and reset endpoints are limited per IP. A 429 TOO_MANY_REQUESTS
 includes Retry-After in seconds. Limits are held in memory of one application
 instance and reset on restart; deployments with multiple instances require a
-shared rate limit store. Queue saturation returns 503 RESET_UNAVAILABLE for every
-email. The frontend should remove the token from the address bar and avoid
+shared rate limit store. The frontend should remove the token from the address bar and avoid
 sending it to analytics. The reverse proxy must omit token query parameters
 from access logs. Ordinary password change, email update, and account deletion
 cancel outstanding reset links.

@@ -38,7 +38,6 @@ public enum ErrorCode {
     PASSWORD_NOT_CHANGED,
     RESET_TOKEN_INVALID,
     TOO_MANY_REQUESTS,
-    RESET_UNAVAILABLE,
 
     //ExternalServiceException
     TMDB_UNAVAILABLE,
