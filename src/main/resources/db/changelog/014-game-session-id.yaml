@@ -1,0 +1,33 @@
+databaseChangeLog:
+  - changeSet:
+      id: 014-game-session-id
+      author: anton
+      changes:
+        - addColumn:
+            tableName: rooms
+            columns:
+              - column:
+                  name: game_session_id
+                  type: VARCHAR(36)
+        - addColumn:
+            tableName: analytics_events
+            columns:
+              - column:
+                  name: game_session_id
+                  type: VARCHAR(36)
+        - createIndex:
+            tableName: analytics_events
+            indexName: idx_analytics_game_session
+            columns:
+              - column:
+                  name: game_session_id
+      rollback:
+        - dropIndex:
+            tableName: analytics_events
+            indexName: idx_analytics_game_session
+        - dropColumn:
+            tableName: analytics_events
+            columnName: game_session_id
+        - dropColumn:
+            tableName: rooms
+            columnName: game_session_id

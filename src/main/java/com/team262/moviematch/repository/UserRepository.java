@@ -6,5 +6,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);
     Optional<User> findByDisplayNameIgnoreCase(String displayName);
     boolean existsByDisplayNameIgnoreCase(String displayName);
+
+    /** "Taken by someone else": the account's own row is excluded */
+    boolean existsByDisplayNameIgnoreCaseAndIdNot(String displayName, Long id);
+
+    boolean existsByEmailAndIdNot(String email, Long id);
 }
 

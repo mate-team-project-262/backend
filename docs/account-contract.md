@@ -6,12 +6,20 @@ Proposed implementation contract. Sign in uses the unique display name shown in 
 - Display name: 3–20 characters after trimming, unique ignoring case.
 - Password: 8–72 characters, includes a letter and a number; never trimmed.
 - GET /auth/csrf: returns token and headerName. Send the token in that header for
-  every POST under /auth and /me, with credentials included.
+  every state-changing request under /auth and /me (POST, PUT, PATCH and DELETE),
+  with credentials included.
 - POST /auth/register: {email, displayName, password}; 201 with {id, email, displayName}
   and a session cookie.
 - POST /auth/login: {displayName, password}; 200 with public user data and a session cookie.
 - POST /auth/logout: 204; invalidates session.
 - GET /me: 200 with public user data, or 401.
+- PATCH /me: updates displayName and/or email. Changing the email requires
+  currentPassword. Returns the updated public user data.
+- PUT /me/password: {currentPassword, newPassword}; 204, saves the new password
+  and invalidates the current account session.
+- DELETE /me: {currentPassword}; 204, permanently deletes the account and
+  invalidates the current account session. Active participants become guests;
+  shared finished-session archives remain available to other accounts.
 - POST /me/participants/link: X-Participant-Token identifies the active guest.
   Requires account authentication and CSRF. Returns 204.
 
@@ -29,6 +37,9 @@ Wrong name/password: 401 INVALID_CREDENTIALS with the same message.
 Missing account session: 401 AUTHENTICATION_REQUIRED. Invalid CSRF: 403.
 Credentials are checked by Spring Security's DaoAuthenticationProvider.
 
-Initial profile scope: finished games, personal reactions, counters and liked
-genre distribution. Account editing/deletion, password reset, social login,
-actor images and recommendations are separate follow-up features.
+GET /me/history summaries include winnerTitles with likesCount, previewTitles
+(the first three cards), totalCards and title genres. GET /me/history/{sessionId}
+returns all cards with their genres and reactions.
+
+Password reset, social login, actor images and recommendations are separate
+follow-up features.

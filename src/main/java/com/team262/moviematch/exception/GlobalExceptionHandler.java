@@ -8,6 +8,7 @@ import com.team262.moviematch.exception.ex.DeckBuildException;
 import com.team262.moviematch.exception.ex.ExternalServiceException;
 import com.team262.moviematch.exception.ex.ForbiddenException;
 import com.team262.moviematch.exception.ex.NotFoundException;
+import com.team262.moviematch.exception.ex.RequestValidationException;
 import com.team262.moviematch.exception.ex.UnauthorizedException;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -26,6 +27,7 @@ public class GlobalExceptionHandler {
                 "REQUEST_FAILED",
                 exception.getReason() == null ? "Request failed" : exception.getReason(), List.of()));
     }
+
     private static final String VALIDATION_ERROR_CODE = "VALIDATION_ERROR";
     private static final String VALIDATION_ERROR_MESSAGE = "Validation failed";
     private static final String INVALID_VALUE = "Invalid value";
@@ -48,6 +50,15 @@ public class GlobalExceptionHandler {
                 VALIDATION_ERROR_MESSAGE,
                 fieldErrors);
         return ResponseEntity.badRequest().body(response);
+    }
+
+    // Validation that depends on stored data or on several fields together
+    @ExceptionHandler(RequestValidationException.class)
+    public ResponseEntity<ErrorResponse> handleRequestValidation(RequestValidationException ex) {
+        return ResponseEntity.badRequest().body(new ErrorResponse(
+                VALIDATION_ERROR_CODE,
+                VALIDATION_ERROR_MESSAGE,
+                ex.getFieldErrors()));
     }
 
     @ExceptionHandler(NotFoundException.class)

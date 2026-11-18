@@ -182,6 +182,7 @@ class GameStartTxServiceTest {
         assertThat(response.deckSize()).isEqualTo(20);
         assertThat(room.getDeckBuildStatus()).isEqualTo(DeckBuildStatus.READY);
         assertThat(room.getStartedAt()).isNotNull();
+        assertThat(room.getGameSessionId()).isNotBlank();
 
         ArgumentCaptor<List<RoomTitle>> captor =
                 ArgumentCaptor.forClass(List.class);
