@@ -1,0 +1,91 @@
+databaseChangeLog:
+  - changeSet:
+      id: 013-analytics-events
+      author: anton
+      changes:
+        - createTable:
+            tableName: analytics_events
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: event_id
+                  type: VARCHAR(36)
+              - column:
+                  name: event_name
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: event_source
+                  type: VARCHAR(16)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: occurred_at
+                  type: DATETIME(6)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: received_at
+                  type: DATETIME(6)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: client_session_id
+                  type: VARCHAR(36)
+              - column:
+                  name: page
+                  type: VARCHAR(200)
+              - column:
+                  name: user_id
+                  type: BIGINT
+              - column:
+                  name: participant_id
+                  type: BIGINT
+              - column:
+                  name: room_id
+                  type: BIGINT
+              - column:
+                  name: properties_json
+                  type: TEXT
+        - addUniqueConstraint:
+            tableName: analytics_events
+            columnNames: event_id
+            constraintName: uk_analytics_event_id
+        - createIndex:
+            tableName: analytics_events
+            indexName: idx_analytics_name_received
+            columns:
+              - column:
+                  name: event_name
+              - column:
+                  name: received_at
+        - createIndex:
+            tableName: analytics_events
+            indexName: idx_analytics_client_session
+            columns:
+              - column:
+                  name: client_session_id
+        - createIndex:
+            tableName: analytics_events
+            indexName: idx_analytics_user_received
+            columns:
+              - column:
+                  name: user_id
+              - column:
+                  name: received_at
+        - createIndex:
+            tableName: analytics_events
+            indexName: idx_analytics_received
+            columns:
+              - column:
+                  name: received_at
+      rollback:
+        - dropTable:
+            tableName: analytics_events

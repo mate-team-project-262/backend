@@ -35,3 +35,9 @@ databaseChangeLog:
   - include:
       file: 012-archive-votes.sql
       relativeToChangelogFile: true
+  - include:
+      file: 013-analytics-events.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: 014-game-session-id.yaml
+      relativeToChangelogFile: true
