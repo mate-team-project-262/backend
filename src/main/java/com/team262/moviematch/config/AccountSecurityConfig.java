@@ -17,12 +17,23 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.crypto.password.Pbkdf2PasswordEncoder;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
+@EnableAsync
 public class AccountSecurityConfig {
+    @Bean
+    public FilterRegistrationBean<AccountSessionVersionFilter> accountVersionFilterRegistration(
+            AccountSessionVersionFilter filter) {
+        FilterRegistrationBean<AccountSessionVersionFilter> registration = new FilterRegistrationBean<>(filter);
+        registration.setEnabled(false);
+        return registration;
+    }
     @Bean
     public PasswordEncoder passwordEncoder() {
         return Pbkdf2PasswordEncoder.defaultsForSpringSecurity_v5_8();
@@ -49,6 +60,7 @@ public class AccountSecurityConfig {
         cors.setAllowedMethods(List.of(
                 "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         cors.setAllowedHeaders(List.of("Content-Type", "X-CSRF-TOKEN", "X-Participant-Token"));
+        cors.setExposedHeaders(List.of("Retry-After"));
         cors.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", cors);
@@ -59,7 +71,8 @@ public class AccountSecurityConfig {
     @Order(1)
     public SecurityFilterChain accounts(HttpSecurity http, ObjectMapper mapper,
             HttpSessionSecurityContextRepository repository,
-            UrlBasedCorsConfigurationSource corsConfigurationSource) throws Exception {
+            UrlBasedCorsConfigurationSource corsConfigurationSource,
+            AccountSessionVersionFilter versionFilter) throws Exception {
         return http.securityMatcher("/auth/**", "/me", "/me/**")
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .securityContext(context -> context.securityContextRepository(repository))
@@ -82,6 +95,7 @@ public class AccountSecurityConfig {
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .logout(AbstractHttpConfigurer::disable)
+                .addFilterBefore(versionFilter, AuthorizationFilter.class)
                 .build();
     }
 }

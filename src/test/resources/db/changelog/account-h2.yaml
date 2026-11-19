@@ -33,4 +33,6 @@ databaseChangeLog:
       file: db/changelog/013-analytics-events.yaml
   - include:
       file: db/changelog/014-game-session-id.yaml
+  - include:
+      file: db/changelog/015-password-reset.sql
 

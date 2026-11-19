@@ -34,6 +34,7 @@ class AccountProfileServiceTest {
 
     @Mock UserRepository users;
     @Mock PasswordEncoder passwordEncoder;
+    @Mock PasswordResetService resets;
     @InjectMocks AccountProfileService service;
 
     private User user() {

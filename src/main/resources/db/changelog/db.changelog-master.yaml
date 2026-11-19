@@ -41,3 +41,6 @@ databaseChangeLog:
   - include:
       file: 014-game-session-id.yaml
       relativeToChangelogFile: true
+  - include:
+      file: 015-password-reset.sql
+      relativeToChangelogFile: true
