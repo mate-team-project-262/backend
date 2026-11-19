@@ -34,6 +34,7 @@ class AccountDeletionServiceTest {
     @Mock UserRepository users;
     @Mock ParticipantRepository participants;
     @Mock PasswordEncoder passwordEncoder;
+    @Mock PasswordResetService resets;
 
     @Test
     void deletesAccountAndDetachesActiveParticipants() {
@@ -44,7 +45,7 @@ class AccountDeletionServiceTest {
         when(users.findById(USER_ID)).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("password123", "stored-hash")).thenReturn(true);
         when(participants.findAllByUserId(USER_ID)).thenReturn(List.of(participant));
-        AccountDeletionService service = new AccountDeletionService(users, participants, passwordEncoder);
+        AccountDeletionService service = new AccountDeletionService(users, participants, passwordEncoder, resets);
 
         service.deleteAccount(USER_ID, new DeleteAccountRequest("password123"));
 
@@ -59,7 +60,7 @@ class AccountDeletionServiceTest {
         User user = user();
         when(users.findById(USER_ID)).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("wrongPassword1", "stored-hash")).thenReturn(false);
-        AccountDeletionService service = new AccountDeletionService(users, participants, passwordEncoder);
+        AccountDeletionService service = new AccountDeletionService(users, participants, passwordEncoder, resets);
 
         assertThatThrownBy(() -> service.deleteAccount(
                 USER_ID, new DeleteAccountRequest("wrongPassword1")))
@@ -75,7 +76,7 @@ class AccountDeletionServiceTest {
     @Test
     void missingAccountRequiresSignInAgain() {
         when(users.findById(USER_ID)).thenReturn(Optional.empty());
-        AccountDeletionService service = new AccountDeletionService(users, participants, passwordEncoder);
+        AccountDeletionService service = new AccountDeletionService(users, participants, passwordEncoder, resets);
 
         assertThatThrownBy(() -> service.deleteAccount(
                 USER_ID, new DeleteAccountRequest("password123")))

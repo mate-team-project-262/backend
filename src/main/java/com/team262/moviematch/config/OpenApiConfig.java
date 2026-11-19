@@ -54,6 +54,6 @@ public class OpenApiConfig {
                                 new SecurityScheme().type(SecurityScheme.Type.APIKEY)
                                         .in(SecurityScheme.In.HEADER)
                                         .name("X-CSRF-TOKEN")
-                                        .description("Fetch with GET /auth/csrf and send for POST requests under /auth and /me.")));
+                                        .description("Fetch with GET /auth/csrf and send for state-changing requests under /auth and /me.")));
     }
 }

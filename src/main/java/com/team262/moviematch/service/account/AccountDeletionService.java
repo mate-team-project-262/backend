@@ -21,6 +21,7 @@ public class AccountDeletionService {
     private final UserRepository users;
     private final ParticipantRepository participants;
     private final PasswordEncoder passwordEncoder;
+    private final PasswordResetService resets;
 
     /**
      * Removes the account while preserving shared game data. Active participants become guests;
@@ -36,6 +37,7 @@ public class AccountDeletionService {
         }
 
         List<Participant> linkedParticipants = participants.findAllByUserId(userId);
+        resets.cancel(userId);
         linkedParticipants.forEach(participant -> participant.setUser(null));
         participants.flush();
 

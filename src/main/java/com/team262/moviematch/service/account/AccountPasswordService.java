@@ -18,6 +18,7 @@ public class AccountPasswordService {
 
     private final UserRepository users;
     private final PasswordEncoder passwordEncoder;
+    private final PasswordResetService resets;
 
     /**
      * The new password's format is checked before this method (bean validation on the request: 400).
@@ -41,6 +42,7 @@ public class AccountPasswordService {
                     "New password must differ from the current one");
         }
         user.changePasswordHash(passwordEncoder.encode(request.newPassword()));
+        resets.cancel(userId);
         users.saveAndFlush(user);
     }
 }

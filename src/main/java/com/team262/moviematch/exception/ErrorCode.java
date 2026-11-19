@@ -37,6 +37,8 @@ public enum ErrorCode {
     ALREADY_VOTED,
     RESULT_NOT_READY,
     PASSWORD_NOT_CHANGED,
+    RESET_TOKEN_INVALID,
+    TOO_MANY_REQUESTS,
 
     //ExternalServiceException
     TMDB_UNAVAILABLE,

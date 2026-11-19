@@ -17,9 +17,6 @@ public class AccountUserDetailsService implements UserDetailsService {
     public UserDetails loadUserByUsername(String displayName) throws UsernameNotFoundException {
         User user = users.findByDisplayNameIgnoreCase(displayName).orElseThrow(() ->
                 new UsernameNotFoundException("Invalid name or password"));
-        return org.springframework.security.core.userdetails.User.withUsername(user.getId().toString())
-                .password(user.getPasswordHash())
-                .roles("USER")
-                .build();
+        return new VersionedAccountDetails(user);
     }
 }
