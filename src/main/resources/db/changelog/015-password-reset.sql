@@ -1,5 +1,5 @@
 --liquibase formatted sql
---changeset team262:013-password-reset
+--changeset team262:015-password-reset
 ALTER TABLE users ADD COLUMN session_version BIGINT NOT NULL DEFAULT 0;
 CREATE TABLE password_reset_tokens (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
