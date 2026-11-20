@@ -8,7 +8,7 @@ Proposed implementation contract. Sign in uses the unique display name shown in 
 - GET /auth/csrf: returns token and headerName. Send the token in that header for
   every state-changing request under /auth and /me (POST, PUT, PATCH and DELETE),
   with credentials included.
-- POST /auth/register: {email, displayName, password}; 201 with {id, email, displayName}
+- POST /auth/register: {email, displayName, password}; 201 with {id, email, displayName, avatarUrl}
   and a session cookie.
 - POST /auth/login: {displayName, password}; 200 with public user data and a session cookie.
 - POST /auth/forgot-password: {email}; 202 with a generic message for known and unknown
@@ -21,11 +21,21 @@ Proposed implementation contract. Sign in uses the unique display name shown in 
   On success all account sessions become invalid; sign in using the new password.
   Active participant tokens remain valid independently.
 - POST /auth/logout: 204; invalidates session.
-- GET /me: 200 with public user data, or 401.
+- GET /me: 200 with {id, email, displayName, avatarUrl}, or 401.
 - PATCH /me: updates displayName and/or email. Changing the email requires
   currentPassword. Returns the updated public user data.
 - PUT /me/password: {currentPassword, newPassword}; 204, saves the new password
   and invalidates the current account session.
+- PUT /me/avatar: multipart/form-data with field `file` (JPG, PNG or WebP, at most
+  2 MiB); 200 with the updated GET /me response. Requires account session and CSRF.
+- GET /me/avatar/image: serves the current account's image with the stored media
+  type; requires the account session. `avatarUrl` is the relative URL
+  `/me/avatar/image?v=...`, or null before upload and after deletion. The frontend
+  resolves it against the API base URL. The version changes on each upload.
+- DELETE /me/avatar: 204, removes the image. Requires account session and CSRF.
+  Invalid images return 400 VALIDATION_ERROR with fieldErrors.file. The backend
+  accepts multipart requests up to 3 MiB and applies a 2 MiB image limit; set
+  the reverse proxy request-body limit to at least 3 MiB.
 - DELETE /me: {currentPassword}; 204, permanently deletes the account and
   invalidates the current account session. Active participants become guests;
   shared finished-session archives remain available to other accounts.
@@ -49,6 +59,9 @@ Credentials are checked by Spring Security's DaoAuthenticationProvider.
 GET /me/history summaries include winnerTitles with likesCount, previewTitles
 (the first three cards), totalCards and title genres. GET /me/history/{sessionId}
 returns all cards with their genres and reactions.
+GET /me/movie-identity includes `favoriteActors[].profileUrl`: a full TMDB w185
+image URL or null when the actor has no photo or the stored title predates photo
+metadata. New TMDB title details save actor IDs and photo paths without extra API calls.
 
 Reset links are sent to the registered email via SMTP and include the current
 sign-in name. Configure FRONTEND_URL (HTTPS in production), MAIL_HOST, MAIL_PORT,
@@ -65,4 +78,4 @@ sending it to analytics. The reverse proxy must omit token query parameters
 from access logs. Ordinary password change, email update, and account deletion
 cancel outstanding reset links.
 
-Social login, actor images and recommendations are separate follow-up features.
+Social login and recommendations are separate follow-up features.

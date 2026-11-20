@@ -14,7 +14,7 @@ public final class AccountApiExamples {
             """;
 
     public static final String UPDATE_RESPONSE = """
-            {"id": 7, "email": "new-email@example.com", "displayName": "NewEgor"}
+            {"id": 7, "email": "new-email@example.com", "displayName": "NewEgor", "avatarUrl": null}
             """;
 
     public static final String VALIDATION_ERROR_FIELD = """

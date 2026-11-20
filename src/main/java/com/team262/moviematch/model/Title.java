@@ -91,6 +91,13 @@ public class Title {
     @Setter(AccessLevel.NONE)
     private List<String> cast = new ArrayList<>();
 
+    @ElementCollection
+    @BatchSize(size = 20)
+    @CollectionTable(name = "title_cast_photos", joinColumns = @JoinColumn(name = "title_id"))
+    @OrderColumn(name = "position")
+    @Setter(AccessLevel.NONE)
+    private List<StoredCastPhoto> castPhotos = new ArrayList<>();
+
     @Column(name = "age_rating", length = 32)
     private String ageRating;
 

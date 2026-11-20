@@ -65,10 +65,13 @@ class HistoryIntegrationTest {
                 // PROFILE-STAT-2/3 fixtures: liked cards are positions 0, 1, 2
                 title.setReleaseYear(position < 2 ? 1997 : 2024);
                 title.getCast().add("Zendaya");                       // on every title
+                title.getCastPhotos().add(new StoredCastPhoto(505710L, "/zendaya.jpg"));
                 if (position < 2) {
                     title.getCast().add("Ryan Gosling");              // on two liked titles
+                    title.getCastPhotos().add(new StoredCastPhoto(30614L, null));
                 }
                 title.getCast().add("Extra " + position);             // one title each: below the actor threshold
+                title.getCastPhotos().add(new StoredCastPhoto(null, null));
                 titles.save(title);
                 RoomTitle card = cards.save(new RoomTitle(room, title, position));
                 votes.save(new Vote(member, card, position < 3));
@@ -141,6 +144,8 @@ class HistoryIntegrationTest {
                 .containsExactly("Zendaya", "Ryan Gosling");
         assertThat(profile.favoriteActors()).extracting(ProfileResponse.ActorStat::likedTitlesCount)
                 .containsExactly(3L, 2L);
+        assertThat(profile.favoriteActors()).extracting(ProfileResponse.ActorStat::profileUrl)
+                .containsExactly("https://image.tmdb.org/t/p/w185/zendaya.jpg", null);
 
         assertThat(history.history(stranger.getId(), 0, 10).items()).isEmpty();
         assertThat(profiles.profile(stranger).favoriteActors()).isEmpty();

@@ -14,6 +14,7 @@ import com.team262.moviematch.exception.ex.UnauthorizedException;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
@@ -22,6 +23,12 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorResponse> handleAvatarTooLarge(MaxUploadSizeExceededException exception) {
+        return ResponseEntity.badRequest().body(new ErrorResponse("VALIDATION_ERROR", "Validation failed",
+                List.of(new FieldErrorResponse("file", "Choose an image up to 2 MB"))));
+    }
+
     @ExceptionHandler(ResetRateLimitException.class)
     public ResponseEntity<ErrorResponse> handleResetLimit(ResetRateLimitException exception) {
         return ResponseEntity.status(429).header("Retry-After", Long.toString(exception.getRetryAfter()))

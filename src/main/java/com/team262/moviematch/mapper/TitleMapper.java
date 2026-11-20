@@ -3,6 +3,7 @@ package com.team262.moviematch.mapper;
 import com.team262.moviematch.config.MapperConfig;
 import com.team262.moviematch.model.Title;
 import com.team262.moviematch.model.StoredGenre;
+import com.team262.moviematch.model.StoredCastPhoto;
 import com.team262.moviematch.source.TmdbTitle;
 import java.util.Collection;
 import java.util.stream.Collectors;
@@ -21,6 +22,7 @@ public interface TitleMapper {
     @Mapping(target = "genres", ignore = true)
     @Mapping(target = "creators", ignore = true)
     @Mapping(target = "cast", ignore = true)
+    @Mapping(target = "castPhotos", ignore = true)
     void update(TmdbTitle source, @MappingTarget Title target);
 
     @AfterMapping
@@ -30,6 +32,8 @@ public interface TitleMapper {
                 .map(genre -> new StoredGenre(genre.id(), genre.name())).collect(Collectors.toSet()));
         replace(target.getCreators(), source.creators());
         replace(target.getCast(), source.cast());
+        replace(target.getCastPhotos(), source.castPhotos().stream()
+                .map(photo -> new StoredCastPhoto(photo.personId(), photo.profilePath())).toList());
     }
 
     private static <T> void replace(Collection<T> target, Collection<T> values) {
