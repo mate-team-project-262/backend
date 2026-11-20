@@ -58,7 +58,11 @@ Credentials are checked by Spring Security's DaoAuthenticationProvider.
 
 GET /me/history summaries include winnerTitles with likesCount, previewTitles
 (the first three cards), totalCards and title genres. GET /me/history/{sessionId}
-returns all cards with their genres and reactions.
+returns all cards with their genres and reactions. Each participant has an
+`avatarUrl`, or null for guests and accounts without an avatar. The URL points to
+`GET /me/history/{sessionId}/participants/{participantId}/avatar?v=...` and
+shows the participant's current avatar. That image endpoint requires a signed-in
+viewer who belongs to the archived session; other accounts receive 404.
 GET /me/movie-identity includes `favoriteActors[].profileUrl`: a full TMDB w185
 image URL or null when the actor has no photo or the stored title predates photo
 metadata. New TMDB title details save actor IDs and photo paths without extra API calls.
