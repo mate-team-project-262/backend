@@ -25,6 +25,7 @@ public enum ErrorCode {
 
     // NotFoundException
     ROOM_NOT_FOUND,
+    AVATAR_NOT_FOUND,
 
     // ConflictException
     ROOM_NOT_JOINABLE,

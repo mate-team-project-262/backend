@@ -53,6 +53,15 @@ email, name, or a caller-supplied user ID never establish ownership.
 The participant may be linked during the game or on the results screen while its
 24-hour participant token is valid. Leaving first revokes that token and skips saving personal history.
 
+GET /rooms/{code} and GET /rooms/{code}/progress include `participants[].avatarUrl`.
+It is null until the participant is linked to an account with an avatar. The
+relative URL `/rooms/{code}/participants/{participantId}/avatar?v=...` serves the
+current image only when `X-Participant-Token` belongs to a member of that room.
+The target participant must also belong to the room. Use `fetch` with this header
+and display the returned Blob via an object URL; a plain `img` request cannot
+send the participant header. Successful images allow private browser caching
+for one hour. Revoke object URLs when replacing them or unmounting the image.
+
 Errors use {code, message, fieldErrors}. Duplicate email: 409 EMAIL_TAKEN.
 Wrong name/password: 401 INVALID_CREDENTIALS with the same message.
 Missing account session: 401 AUTHENTICATION_REQUIRED. Invalid CSRF: 403.
