@@ -12,6 +12,7 @@ import com.team262.moviematch.repository.ParticipantVoteCount;
 import com.team262.moviematch.repository.RoomTitleRepository;
 import com.team262.moviematch.repository.VoteRepository;
 import com.team262.moviematch.service.ParticipantAccessService;
+import com.team262.moviematch.service.RoomParticipantAvatarService;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -100,7 +101,8 @@ public class GameProgressService {
                                 votesByParticipant.getOrDefault(
                                         p.getId(),
                                         0L),
-                                totalCards)))
+                                totalCards),
+                        RoomParticipantAvatarService.url(p)))
                 .toList();
 
         // Count participants that finished voting.

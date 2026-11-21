@@ -113,10 +113,10 @@ public class GameController {
                             schema = @Schema(implementation = GameProgressResponse.class),
                             examples = @ExampleObject(value = "{\"finishedParticipants\":3,\"totalParticipants\":4,"
                                     + "\"myFinished\":true,\"allFinished\":false,\"participants\":["
-                                    + "{\"id\":1,\"displayName\":\"Sofia\",\"host\":true,\"finished\":true},"
-                                    + "{\"id\":2,\"displayName\":\"Anna\",\"host\":false,\"finished\":true},"
-                                    + "{\"id\":3,\"displayName\":\"Peter\",\"host\":false,\"finished\":true},"
-                                    + "{\"id\":4,\"displayName\":\"Alex\",\"host\":false,\"finished\":false}]}"))),
+                                    + "{\"id\":1,\"displayName\":\"Sofia\",\"host\":true,\"finished\":true,\"avatarUrl\":null},"
+                                    + "{\"id\":2,\"displayName\":\"Anna\",\"host\":false,\"finished\":true,\"avatarUrl\":null},"
+                                    + "{\"id\":3,\"displayName\":\"Peter\",\"host\":false,\"finished\":true,\"avatarUrl\":null},"
+                                    + "{\"id\":4,\"displayName\":\"Alex\",\"host\":false,\"finished\":false,\"avatarUrl\":null}]}"))),
             @ApiResponse(responseCode = "401", description = "INVALID_TOKEN: missing, blank, unknown or expired token",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorResponse.class), examples = {

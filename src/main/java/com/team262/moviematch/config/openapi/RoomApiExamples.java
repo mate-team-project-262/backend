@@ -31,8 +31,8 @@ public final class RoomApiExamples {
     public static final String LOBBY_RESPONSE = """
             {"code":"K7M2QX","status":"LOBBY","preferences":{"contentType":"MOVIES",
             "genreIds":[28,35],"maxDurationMinutes":120},"participantCount":2,"maxParticipants":5,
-            "participants":[{"id":1,"displayName":"Anna","host":true},
-            {"id":2,"displayName":"Egor","host":false}]}
+            "participants":[{"id":1,"displayName":"Anna","host":true,"avatarUrl":null},
+            {"id":2,"displayName":"Egor","host":false,"avatarUrl":null}]}
             """;
     public static final String VALIDATION_ERROR = """
             {"code":"VALIDATION_ERROR","message":"Validation failed",

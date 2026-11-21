@@ -6,8 +6,10 @@ import com.team262.moviematch.dto.room.response.CreateRoomResponse;
 import com.team262.moviematch.dto.room.response.JoinRoomResponse;
 import com.team262.moviematch.dto.room.response.RoomDetailsResponse;
 import com.team262.moviematch.model.Participant;
+import com.team262.moviematch.model.UserAvatar;
 import com.team262.moviematch.security.CurrentParticipant;
 import com.team262.moviematch.service.RoomService;
+import com.team262.moviematch.service.RoomParticipantAvatarService;
 import com.team262.moviematch.config.OpenApiConfig;
 import com.team262.moviematch.config.openapi.FrameworkErrorResponse;
 import com.team262.moviematch.config.openapi.RoomApiExamples;
@@ -23,9 +25,12 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.net.URI;
+import java.time.Duration;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.CacheControl;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -40,6 +45,21 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Rooms", description = "Room creation, membership and lobby retrieval")
 public class RoomController {
     private final RoomService roomService;
+    private final RoomParticipantAvatarService avatars;
+
+    @GetMapping("/{code}/participants/{participantId}/avatar")
+    @Operation(summary = "Get a room participant's avatar",
+            description = "Requires X-Participant-Token for a participant in this room. "
+                    + "The target participant must also belong to this room and have a linked account with an avatar. "
+                    + "Use fetch with the token header to load the image; an img element cannot send that header.",
+            security = @SecurityRequirement(name = OpenApiConfig.PARTICIPANT_TOKEN))
+    public ResponseEntity<byte[]> participantAvatar(@PathVariable String code,
+            @PathVariable Long participantId, @CurrentParticipant Participant viewer) {
+        UserAvatar avatar = avatars.get(code, viewer, participantId);
+        return ResponseEntity.ok().cacheControl(CacheControl.maxAge(Duration.ofHours(1)).cachePrivate())
+                .contentType(MediaType.parseMediaType(avatar.getContentType()))
+                .body(avatar.getImageBytes());
+    }
 
     @PostMapping
     @Operation(operationId = "createRoom", summary = "Create a room and become its host",

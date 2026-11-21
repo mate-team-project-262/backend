@@ -6,5 +6,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public record ParticipantDto(
         @Schema(description = "Participant ID", example = "1", requiredMode = Schema.RequiredMode.REQUIRED) long id,
         @Schema(description = "Display name", example = "Anna", requiredMode = Schema.RequiredMode.REQUIRED) String displayName,
-        @Schema(description = "Whether this participant created the room", example = "true", requiredMode = Schema.RequiredMode.REQUIRED) boolean host) {
+        @Schema(description = "Whether this participant created the room", example = "true", requiredMode = Schema.RequiredMode.REQUIRED) boolean host,
+        @Schema(description = "Relative avatar URL for a linked account, or null") String avatarUrl) {
 }

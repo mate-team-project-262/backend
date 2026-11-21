@@ -9,6 +9,7 @@ import com.team262.moviematch.dto.room.response.PreferencesResponse;
 import com.team262.moviematch.dto.room.response.RoomDetailsResponse;
 import com.team262.moviematch.model.Participant;
 import com.team262.moviematch.model.Room;
+import com.team262.moviematch.service.RoomParticipantAvatarService;
 import java.util.List;
 import java.util.Set;
 import org.mapstruct.BeanMapping;
@@ -34,8 +35,10 @@ public interface RoomMapper {
     @Mapping(target = "maxDurationMinutes", source = "maxDurationMinutes")
     void applyPreferences(PreferencesRequest preferences, @MappingTarget Room room);
 
-    @Mapping(target = "displayName", source = "name")
-    ParticipantDto toParticipant(Participant participant);
+    default ParticipantDto toParticipant(Participant participant) {
+        return new ParticipantDto(participant.getId(), participant.getName(), participant.isHost(),
+                RoomParticipantAvatarService.url(participant));
+    }
 
     @Mapping(target = "displayName", source = "participant.name")
     @Mapping(target = "token", source = "token")

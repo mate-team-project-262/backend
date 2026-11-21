@@ -10,6 +10,7 @@ public record ParticipantProgressDto(
         @Schema(description = "Whether this participant is the host",
                 requiredMode = Schema.RequiredMode.REQUIRED) boolean host,
         @Schema(description = "true = Done (voted on every card), false = Swiping...",
-                requiredMode = Schema.RequiredMode.REQUIRED) boolean finished
+                requiredMode = Schema.RequiredMode.REQUIRED) boolean finished,
+        @Schema(description = "Relative avatar URL for a linked account, or null") String avatarUrl
 ) {
 }
