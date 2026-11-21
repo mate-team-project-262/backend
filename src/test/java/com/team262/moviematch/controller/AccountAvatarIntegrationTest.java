@@ -60,6 +60,8 @@ class AccountAvatarIntegrationTest {
         MvcResult served = mvc.perform(get("/me/avatar/image").session(session))
                 .andExpect(status().isOk()).andReturn();
         assertThat(served.getResponse().getContentType()).isEqualTo("image/png");
+        assertThat(served.getResponse().getHeader("Cache-Control"))
+                .isEqualTo("max-age=3600, private");
         assertThat(served.getResponse().getContentAsByteArray()).isEqualTo(png);
 
         MockMultipartFile invalid = new MockMultipartFile("file", "bad.png", "image/png",

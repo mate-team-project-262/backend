@@ -29,7 +29,9 @@ Proposed implementation contract. Sign in uses the unique display name shown in 
 - PUT /me/avatar: multipart/form-data with field `file` (JPG, PNG or WebP, at most
   2 MiB); 200 with the updated GET /me response. Requires account session and CSRF.
 - GET /me/avatar/image: serves the current account's image with the stored media
-  type; requires the account session. `avatarUrl` is the relative URL
+  type; requires the account session. Successful image responses allow private
+  browser caching for one hour (`Cache-Control: max-age=3600, private`).
+  `avatarUrl` is the relative URL
   `/me/avatar/image?v=...`, or null before upload and after deletion. The frontend
   resolves it against the API base URL. The version changes on each upload.
 - DELETE /me/avatar: 204, removes the image. Requires account session and CSRF.
@@ -62,7 +64,9 @@ returns all cards with their genres and reactions. Each participant has an
 `avatarUrl`, or null for guests and accounts without an avatar. The URL points to
 `GET /me/history/{sessionId}/participants/{participantId}/avatar?v=...` and
 shows the participant's current avatar. That image endpoint requires a signed-in
-viewer who belongs to the archived session; other accounts receive 404.
+viewer who belongs to the archived session; other accounts receive 404. Successful
+images allow private browser caching for one hour. A previously loaded image may
+remain visible in that browser until its cache entry expires after sign-out.
 GET /me/movie-identity includes `favoriteActors[].profileUrl`: a full TMDB w185
 image URL or null when the actor has no photo or the stored title predates photo
 metadata. New TMDB title details save actor IDs and photo paths without extra API calls.

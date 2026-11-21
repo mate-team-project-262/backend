@@ -5,6 +5,7 @@ import com.team262.moviematch.dto.history.HistoryDtos.*;
 import com.team262.moviematch.model.UserAvatar;
 import com.team262.moviematch.service.account.AccountService;
 import com.team262.moviematch.service.history.HistoryService;
+import java.time.Duration;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import io.swagger.v3.oas.annotations.Operation;
@@ -66,7 +67,7 @@ public class HistoryController {
             @PathVariable Long sessionId, @PathVariable Long participantId) {
         UserAvatar avatar = history.participantAvatar(
                 accounts.current(authentication).getId(), sessionId, participantId);
-        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+        return ResponseEntity.ok().cacheControl(CacheControl.maxAge(Duration.ofHours(1)).cachePrivate())
                 .contentType(MediaType.parseMediaType(avatar.getContentType()))
                 .body(avatar.getImageBytes());
     }

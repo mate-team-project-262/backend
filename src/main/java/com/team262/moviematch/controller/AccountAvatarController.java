@@ -6,6 +6,7 @@ import com.team262.moviematch.model.User;
 import com.team262.moviematch.model.UserAvatar;
 import com.team262.moviematch.service.account.AccountAvatarService;
 import com.team262.moviematch.service.account.AccountService;
+import java.time.Duration;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -54,7 +55,7 @@ public class AccountAvatarController {
             security = @SecurityRequirement(name = OpenApiConfig.ACCOUNT_SESSION))
     public ResponseEntity<byte[]> image(Authentication authentication) {
         UserAvatar avatar = avatars.get(accounts.current(authentication));
-        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+        return ResponseEntity.ok().cacheControl(CacheControl.maxAge(Duration.ofHours(1)).cachePrivate())
                 .contentType(MediaType.parseMediaType(avatar.getContentType()))
                 .body(avatar.getImageBytes());
     }
