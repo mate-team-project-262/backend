@@ -11,7 +11,7 @@ public final class HistoryDtos {
     public record WinnerTitleDto(Long id, String title, Integer year, String posterUrl,
                                  Integer runtimeMinutes, java.math.BigDecimal voteAverage,
                                  List<GenreDto> genres, int likesCount) {}
-    public record ParticipantDto(String displayName, boolean host, boolean me) {}
+    public record ParticipantDto(String displayName, boolean host, boolean me, String avatarUrl) {}
     public record CardDto(int position, TitleDto title, int likesCount, boolean winner, Boolean myVote) {}
     public record Summary(Long sessionId, Instant finishedAt, ContentType contentType,
                           int participantCount, int totalCards, List<WinnerTitleDto> winnerTitles,

@@ -47,11 +47,15 @@ final class TmdbTitleMapper {
                 .filter(genre -> number(genre, "id") != null)
                 .map(genre -> new TitleGenre(integer(genre, "id"), text(genre, "name"))).toList();
         List<String> creators = movie ? List.of() : names(array(node.path("created_by")));
-        List<String> cast = names(array(credits.path("cast")).stream()
+        List<JsonNode> castPeople = array(credits.path("cast")).stream()
                 .sorted(Comparator.comparingInt(person -> {
                     Integer order = integer(person, "order");
                     return order == null ? Integer.MAX_VALUE : order;
-                })).toList());
+                })).filter(person -> text(person, "name") != null).toList();
+        List<String> cast = names(castPeople);
+        List<CastPhoto> castPhotos = castPeople.stream()
+                .map(person -> new CastPhoto(positive(number(person, "id")),
+                        text(person, "profile_path"))).toList();
         String director = array(credits.path("crew")).stream()
                 .filter(person -> movie ? "Director".equals(text(person, "job"))
                         : array(person.path("jobs")).stream()
@@ -64,7 +68,7 @@ final class TmdbTitleMapper {
                 movie ? positive(integer(node, "runtime")) : episodeRuntime(node), genres,
                 director.isEmpty() ? null : director, creators, cast, certification(node, movie),
                 positive(number(node, "budget")), positive(number(node, "revenue")),
-                text(node, "original_language"));
+                text(node, "original_language"), castPhotos);
     }
 
     private Integer episodeRuntime(JsonNode node) {

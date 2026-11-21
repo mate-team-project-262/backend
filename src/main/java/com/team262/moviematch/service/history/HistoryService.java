@@ -4,10 +4,14 @@ import com.team262.moviematch.dto.voc.GenreDto;
 import com.team262.moviematch.exception.ErrorCode;
 import com.team262.moviematch.exception.ex.NotFoundException;
 import com.team262.moviematch.model.Title;
+import com.team262.moviematch.model.User;
+import com.team262.moviematch.model.UserAvatar;
 import com.team262.moviematch.model.history.ArchivedCard;
 import com.team262.moviematch.model.history.GameSessionArchive;
 import com.team262.moviematch.model.history.ArchivedVote;
 import com.team262.moviematch.repository.GameSessionArchiveRepository;
+import com.team262.moviematch.repository.UserAvatarRepository;
+import com.team262.moviematch.repository.UserRepository;
 import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +25,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class HistoryService {
     private final GameSessionArchiveRepository archives;
+    private final UserRepository users;
+    private final UserAvatarRepository avatars;
     public HistoryPage history(Long userId, int page, int size) {
         Page<GameSessionArchive> result = archives.findDistinctByParticipants_UserId(
                 userId, PageRequest.of(page, size,
@@ -36,14 +42,43 @@ public class HistoryService {
         Map<Long, Boolean> votes = session.getVotes().stream()
                 .filter(vote -> mine.contains(vote.getSourceParticipantId()))
                 .collect(Collectors.toMap(vote -> vote.getSourceCardId(), vote -> vote.isLiked()));
+        Set<Long> linkedUserIds = session.getParticipants().stream()
+                .map(member -> member.getUserId()).filter(Objects::nonNull).collect(Collectors.toSet());
+        Map<Long, User> linkedUsers = users.findAllById(linkedUserIds).stream()
+                .collect(Collectors.toMap(User::getId, user -> user));
         return new Details(summary(session, userId),
                 session.getParticipants().stream()
                         .sorted(Comparator.comparing(member -> member.getSourceParticipantId()))
                         .map(member -> new ParticipantDto(member.getDisplayName(), member.isHost(),
-                                Objects.equals(member.getUserId(), userId))).toList(),
+                                Objects.equals(member.getUserId(), userId),
+                                avatarUrl(sessionId, member.getSourceParticipantId(),
+                                        linkedUsers.get(member.getUserId())))).toList(),
                 session.getCards().stream().map(card -> new CardDto(card.getPosition(),
                         title(card.getTitle()), card.getLikesCount(), card.isWinner(),
                         votes.get(card.getSourceCardId()))).toList());
+    }
+    public UserAvatar participantAvatar(Long viewerId, Long sessionId, Long participantId) {
+        GameSessionArchive session = archives.findDistinctByIdAndParticipants_UserId(
+                sessionId, viewerId).orElseThrow(HistoryService::historyNotFound);
+        Long ownerId = session.getParticipants().stream()
+                .filter(member -> Objects.equals(member.getSourceParticipantId(), participantId))
+                .map(member -> member.getUserId()).filter(Objects::nonNull)
+                .findFirst().orElseThrow(HistoryService::historyNotFound);
+        User owner = users.findById(ownerId).orElseThrow(HistoryService::historyNotFound);
+        if (owner.getAvatarVersion() == null) {
+            throw historyNotFound();
+        }
+        return avatars.findById(ownerId).orElseThrow(HistoryService::historyNotFound);
+    }
+
+    private String avatarUrl(Long sessionId, Long participantId, User user) {
+        return user == null || user.getAvatarVersion() == null ? null
+                : "/me/history/" + sessionId + "/participants/" + participantId
+                        + "/avatar?v=" + user.getAvatarVersion();
+    }
+
+    private static NotFoundException historyNotFound() {
+        return new NotFoundException(ErrorCode.HISTORY_NOT_FOUND, "Session or avatar not found");
     }
     private Summary summary(GameSessionArchive session, Long userId) {
         Set<Long> mine = participantIds(session, userId);

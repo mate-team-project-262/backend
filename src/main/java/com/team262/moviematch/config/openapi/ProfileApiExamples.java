@@ -15,7 +15,7 @@ public final class ProfileApiExamples {
 
     public static final String PROFILE_RESPONSE = """
             {
-              "user": {"id": 7, "email": "egor@example.com", "displayName": "Egor"},
+              "user": {"id": 7, "email": "egor@example.com", "displayName": "Egor", "avatarUrl": null},
               "sessionsCount": 8,
               "ratedCount": 160,
               "likedCount": 47,
@@ -34,15 +34,15 @@ public final class ProfileApiExamples {
               ],
               "favoriteDecade": {"decade": 2020, "label": "2020s", "likedCount": 25, "percentage": 53.2},
               "favoriteActors": [
-                {"name": "Ryan Gosling", "likedTitlesCount": 5},
-                {"name": "Zendaya", "likedTitlesCount": 4}
+                {"name": "Ryan Gosling", "likedTitlesCount": 5, "profileUrl": "https://image.tmdb.org/t/p/w185/example.jpg"},
+                {"name": "Zendaya", "likedTitlesCount": 4, "profileUrl": null}
               ]
             }
             """;
 
     public static final String EMPTY_PROFILE_RESPONSE = """
             {
-              "user": {"id": 7, "email": "egor@example.com", "displayName": "Egor"},
+              "user": {"id": 7, "email": "egor@example.com", "displayName": "Egor", "avatarUrl": null},
               "sessionsCount": 0, "ratedCount": 0, "likedCount": 0,
               "genreMix": [], "favoriteGenre": null, "leastLikedGenre": null,
               "decadeMix": [], "favoriteDecade": null, "favoriteActors": []

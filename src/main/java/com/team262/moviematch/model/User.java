@@ -19,6 +19,8 @@ public class User {
     private Instant createdAt = Instant.now();
     @Column(name = "session_version", nullable = false)
     private long sessionVersion;
+    @Column(name = "avatar_version")
+    private Long avatarVersion;
     public User(String email, String passwordHash, String displayName) {
         this.email = email;
         this.passwordHash = passwordHash;
@@ -39,6 +41,10 @@ public class User {
 
     public void revokeSessions() {
         sessionVersion++;
+    }
+
+    public void changeAvatarVersion(Long avatarVersion) {
+        this.avatarVersion = avatarVersion;
     }
 }
 

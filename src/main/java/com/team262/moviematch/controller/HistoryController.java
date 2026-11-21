@@ -2,8 +2,10 @@ package com.team262.moviematch.controller;
 import com.team262.moviematch.config.OpenApiConfig;
 import com.team262.moviematch.dto.error.ErrorResponse;
 import com.team262.moviematch.dto.history.HistoryDtos.*;
+import com.team262.moviematch.model.UserAvatar;
 import com.team262.moviematch.service.account.AccountService;
 import com.team262.moviematch.service.history.HistoryService;
+import java.time.Duration;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import io.swagger.v3.oas.annotations.Operation;
@@ -14,6 +16,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.CacheControl;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 @RestController
@@ -53,6 +58,18 @@ public class HistoryController {
     public Details details(Authentication authentication,
             @Parameter(description = "Archived session ID", example = "42") @PathVariable Long sessionId) {
         return history.details(accounts.current(authentication).getId(), sessionId);
+    }
+
+    @GetMapping("/me/history/{sessionId}/participants/{participantId}/avatar")
+    @Operation(summary = "Get a participant's current avatar from an accessible finished session",
+            security = @SecurityRequirement(name = OpenApiConfig.ACCOUNT_SESSION))
+    public ResponseEntity<byte[]> participantAvatar(Authentication authentication,
+            @PathVariable Long sessionId, @PathVariable Long participantId) {
+        UserAvatar avatar = history.participantAvatar(
+                accounts.current(authentication).getId(), sessionId, participantId);
+        return ResponseEntity.ok().cacheControl(CacheControl.maxAge(Duration.ofHours(1)).cachePrivate())
+                .contentType(MediaType.parseMediaType(avatar.getContentType()))
+                .body(avatar.getImageBytes());
     }
 }
 

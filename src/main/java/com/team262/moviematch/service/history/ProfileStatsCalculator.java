@@ -26,7 +26,10 @@ public class ProfileStatsCalculator {
     }
 
     /** Number of different liked titles per actor name. */
-    public record ActorRow(String name, long likedTitles) {
+    public record ActorRow(String name, long likedTitles, Long personId, String profilePath) {
+        public ActorRow(String name, long likedTitles) {
+            this(name, likedTitles, null, null);
+        }
     }
 
     public ProfileStatsCalculator(@Value("${profile.min-genre-ratings:5}") int minGenreRatings,
@@ -97,7 +100,9 @@ public class ProfileStatsCalculator {
                 .sorted(Comparator.comparingLong(ActorRow::likedTitles).reversed()
                         .thenComparing(ActorRow::name))
                 .limit(actorsLimit)
-                .map(row -> new ActorStat(row.name(), row.likedTitles()))
+                .map(row -> new ActorStat(row.name(), row.likedTitles(),
+                        row.profilePath() == null || row.profilePath().isBlank() ? null
+                                : "https://image.tmdb.org/t/p/w185" + row.profilePath()))
                 .toList();
     }
 

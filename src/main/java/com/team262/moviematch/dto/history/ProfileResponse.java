@@ -44,6 +44,8 @@ public record ProfileResponse(
     public record ActorStat(
             String name,
             @Schema(description = "Number of different titles with this actor that the user liked")
-            long likedTitlesCount) {
+            long likedTitlesCount,
+            @Schema(description = "Full TMDB profile image URL, or null when no photo is available", nullable = true)
+            String profileUrl) {
     }
 }

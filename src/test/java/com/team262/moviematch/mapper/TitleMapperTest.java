@@ -3,6 +3,7 @@ package com.team262.moviematch.mapper;
 import com.team262.moviematch.model.ContentType;
 import com.team262.moviematch.model.Title;
 import com.team262.moviematch.source.TitleGenre;
+import com.team262.moviematch.source.CastPhoto;
 import com.team262.moviematch.source.TmdbTitle;
 import java.math.BigDecimal;
 import java.util.List;
@@ -46,5 +47,22 @@ class TitleMapperTest {
         assertThat(t.getBudget()).isEqualTo(190_000_000L);
         assertThat(t.getRevenue()).isEqualTo(714_444_358L);
         assertThat(t.getOriginalLanguage()).isEqualTo("en");
+    }
+
+    @Test
+    void preservesActorPhotoDataWithoutChangingCardCastNames() {
+        TmdbTitle base = sample(List.of("Zendaya"));
+        TmdbTitle source = new TmdbTitle(base.tmdbId(), base.mediaType(), base.title(),
+                base.releaseYear(), base.overview(), base.posterPath(), base.popularity(),
+                base.voteAverage(), base.runtimeMinutes(), base.genres(), base.director(),
+                base.creators(), base.cast(), base.ageRating(), base.budget(), base.revenue(),
+                base.originalLanguage(), List.of(new CastPhoto(505710L, "/zendaya.jpg")));
+        Title title = newEntity(source);
+
+        mapper.update(source, title);
+
+        assertThat(title.getCast()).isEqualTo(List.of("Zendaya"));
+        assertThat(title.getCastPhotos().getFirst().getPersonId()).isEqualTo(505710L);
+        assertThat(title.getCastPhotos().getFirst().getProfilePath()).isEqualTo("/zendaya.jpg");
     }
 }
