@@ -41,6 +41,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ExtendWith(MockitoExtension.class)
 class RoomControllerTest {
     @Mock private RoomService rooms;
+    @Mock private com.team262.moviematch.service.RoomParticipantAvatarService avatars;
     @Mock private ParticipantTokenService tokens;
     @Mock private Participant currentParticipant;
     private MockMvc mvc;
@@ -48,7 +49,7 @@ class RoomControllerTest {
 
     @BeforeEach
     void setUp() {
-        mvc = MockMvcBuilders.standaloneSetup(new RoomController(rooms))
+        mvc = MockMvcBuilders.standaloneSetup(new RoomController(rooms, avatars))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .setCustomArgumentResolvers(new CurrentParticipantArgumentResolver(tokens))
                 .build();
@@ -84,7 +85,7 @@ class RoomControllerTest {
         when(tokens.requireParticipant("host-token")).thenReturn(currentParticipant);
         when(rooms.getLobby("K7M2QX", currentParticipant)).thenReturn(
                 new RoomDetailsResponse("K7M2QX", RoomStatus.LOBBY, defaults, 1, 5,
-                        List.of(new ParticipantDto(7, "Host", true))));
+                        List.of(new ParticipantDto(7, "Host", true, null))));
         mvc.perform(get("/rooms/K7M2QX").header("X-Participant-Token", "host-token"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.participantCount").value(1))
