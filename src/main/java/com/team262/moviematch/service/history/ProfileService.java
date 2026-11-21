@@ -64,14 +64,19 @@ public class ProfileService {
                 GROUP BY title.release_year
                 """, (row, index) -> new YearRow(row.getInt(1), row.getLong(2)), user.getId());
 
-        // PROFILE-STAT-3: different liked titles per actor name.
+        // New titles retain TMDB identity and photo; older cast rows still return null photos.
         List<ActorRow> actorRows = jdbc.query("""
-                SELECT actor.name, COUNT(DISTINCT card.title_id)
+                SELECT MAX(actor.name), COUNT(DISTINCT card.title_id), photo.person_id,
+                       MAX(photo.profile_path)
                 """ + REACTIONS + """
                 JOIN title_cast actor ON actor.title_id = card.title_id
+                LEFT JOIN title_cast_photos photo ON photo.title_id = actor.title_id
+                    AND photo.position = actor.position
                 WHERE member.user_id = ? AND vote.liked = TRUE
-                GROUP BY actor.name
-                """, (row, index) -> new ActorRow(row.getString(1), row.getLong(2)), user.getId());
+                GROUP BY photo.person_id,
+                         CASE WHEN photo.person_id IS NULL THEN actor.name ELSE NULL END
+                """, (row, index) -> new ActorRow(row.getString(1), row.getLong(2),
+                row.getObject(3, Long.class), row.getString(4)), user.getId());
 
         List<GenreStat> genreMix = stats.genreMix(genreRows);
         var decadeMix = stats.decadeMix(yearRows);

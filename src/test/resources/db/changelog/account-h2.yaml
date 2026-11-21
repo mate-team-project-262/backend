@@ -35,4 +35,6 @@ databaseChangeLog:
       file: db/changelog/014-game-session-id.yaml
   - include:
       file: db/changelog/015-password-reset.sql
+  - include:
+      file: db/changelog/016-profile-images.sql
 
