@@ -1,242 +1,135 @@
-# ⚙️ Team 262 — Backend Service
+# 🎬 W2W — What to Watch
 
-Backend API for the Team 262 project.
+<!-- =========================================================================
+     SECTION 1: UNIFIED PROJECT OVERVIEW (KEEP IDENTICAL ACROSS ALL 4 REPOS)
+     ========================================================================= -->
 
-## 💻 Tech Stack
-* **Language:** Java 21
-* **Framework:** Spring Boot
-* **Build Tool:** Maven
-* **Database:** MySQL 8.0 (Dockerized)
+[![Infra CI](https://img.shields.io/github/actions/workflow/status/mate-team-project-262/infra/infra-ci.yml?branch=main&label=Infra%20CI&logo=githubactions)](https://github.com/mate-team-project-262/infra/actions/workflows/infra-ci.yml)
+[![Infra CD](https://img.shields.io/github/actions/workflow/status/mate-team-project-262/infra/infra-cd.yml?branch=main&label=Infra%20CD&logo=amazonaws)](https://github.com/mate-team-project-262/infra/actions/workflows/infra-cd.yml)
+[![Backend CI](https://img.shields.io/github/actions/workflow/status/mate-team-project-262/backend/ci.yml?branch=main&label=Backend%20CI&logo=githubactions)](https://github.com/mate-team-project-262/backend/actions)
+[![Frontend CI](https://img.shields.io/github/actions/workflow/status/mate-team-project-262/frontend/ci.yml?branch=main&label=Frontend%20CI&logo=githubactions)](https://github.com/mate-team-project-262/frontend/actions)
 
-## 📖 Getting Started
-Please read our [CONTRIBUTING.md](./CONTRIBUTING.md) guide for Git Flow rules and local MySQL database setup instructions.
+**Stop arguing about what to watch.** W2W (What to Watch) is a real-time collaborative movie picker: create a room, invite friends via link, 6-character code, or QR code, swipe through the same 20 curated TMDB movies, and let the interactive match roulette pick the film your whole group agrees on — no account required.
 
-## Run locally
+## 🌐 Live Demo & Endpoints
 
-Requires Java 21, Maven 3.6.3+ and Docker Compose. The application uses Spring Boot 3.5.
+* **Live Application:** [https://what2watch.duckdns.org](https://what2watch.duckdns.org)
+* **OpenAPI / Swagger UI:** [https://what2watch.duckdns.org/swagger-ui/index.html](https://what2watch.duckdns.org/swagger-ui/index.html)
+* **Edge Gateway Health:** [https://what2watch.duckdns.org/gateway-health](https://what2watch.duckdns.org/gateway-health)
 
-1. Copy `.env.example` to `.env` and replace the password placeholders locally.
-2. Start MySQL: `docker compose up -d --wait`.
-3. Set `MYSQL_DATABASE`, `MYSQL_USER` and `MYSQL_PASSWORD` in your shell or IDE
-   environment to the same values as `.env`. Optionally set `MYSQL_HOST` and
-   `MYSQL_PORT` (defaults: `localhost` and `3306`). Docker Compose reads `.env`
-   automatically; Spring Boot does not.
-4. Run `mvn spring-boot:run`. The HTTP server listens on port 8080.
+> **Availability note:** To optimize AWS Free Tier costs, an automated FinOps schedule pauses the cloud servers overnight (**22:00–08:00 EET, Kyiv time**). If the live demo is sleeping, see the screenshots below.
 
-### Run Full Stack with Docker Compose (MySQL + App)
-To run both MySQL and the containerized Backend service together:
-```bash
-# 1. Ensure .env exists with required credentials
-cp -n .env.example .env
+![W2W Landing Page](https://raw.githubusercontent.com/mate-team-project-262/frontend/main/docs/screenshots/landing.jpg)
 
-# 2. Build and start both services
-docker compose --profile app up -d --build
+| Swipe Session | Match Results |
+| :---: | :---: |
+| ![W2W Swipe Session](https://raw.githubusercontent.com/mate-team-project-262/frontend/main/docs/screenshots/swipe.jpg) | ![W2W Match Results](https://raw.githubusercontent.com/mate-team-project-262/frontend/main/docs/screenshots/results.jpg) |
 
-# 3. View backend logs
-docker compose logs -f backend
+### Try it in 60 seconds
+1. Open the Live Application and click **Create a room**, then choose content type, genres, and duration.
+2. Open the invite link in a second browser or incognito window and join under another name.
+3. The host clicks **Start session**; everyone swipes through the same 20 movies (like or skip).
+4. When everyone finishes, view the matched winner — or spin the fair roulette to break a tie.
 
-# 4. Stop containers
-docker compose --profile app down
+## 🧩 Repository Ecosystem
+
+The platform is organized into four repositories connected by a unified GitHub Actions + GHCR + AWS EC2 delivery pipeline:
+
+```text
+Browser (HTTPS) ─▶ Nginx Gateway (TLS, CSP/HSTS, Rate Limiting)
+                     ├─ /       ─▶ React SPA (frontend)
+                     └─ /api/*  ─▶ Spring Boot API (backend) ─▶ AWS RDS MySQL + TMDB / Gmail SMTP
 ```
 
-The current Spring Security filter permits requests; room lobby authentication
-uses `X-Participant-Token` through `@CurrentParticipant`. Liquibase owns schema changes; add migrations to
-`src/main/resources/db/changelog/db.changelog-master.yaml`. Hibernate validates
-the schema without creating tables.
+| Repository                                                            | Responsibility | Core Tech Stack |
+|:----------------------------------------------------------------------| :--- | :--- |
+| **[`frontend`](https://github.com/mate-team-project-262/frontend)**   | SPA UI: room lobby, swipe deck, profiles, match roulette | React 19, TypeScript, TanStack Query, Vite 8, Nginx |
+| **[`backend`](https://github.com/mate-team-project-262/backend)**     | REST API, room state machine, voting engine, TMDB & SMTP | Java 21, Spring Boot 3.5, Liquibase, MySQL 8.0, Testcontainers |
+| **[`infra`](https://github.com/mate-team-project-262/infra)**         | AWS Terraform IaC, Docker Compose, SSL Gateway, Observability | Terraform, AWS (EC2/RDS/VPC/S3), Nginx, Prometheus, Grafana |
+| **[`analytics`](https://github.com/mate-team-project-262/analytics)** | Data cleaning, EDA, survey & product metrics visualization | Python 3, Jupyter Notebook, Pandas, NumPy, Matplotlib, Seaborn |
 
-Run `mvn clean verify` to build the executable JAR and run all tests. Docker must
-be running: Testcontainers starts isolated MySQL 8.0.44 databases for the
-context/security smoke test and the JPA integration tests. The first run downloads
-the images; no local `.env` or running Compose database is needed for tests.
-Liquibase creates the schema and Hibernate uses `ddl-auto=validate`; H2 is not used.
-The JAR is written to `target/movie-match-0.0.1-SNAPSHOT.jar`.
+## 🚀 Run the Entire Stack Locally (3 Steps)
 
-Run only the persistence tests with `mvn -Dtest=RoomPersistenceTests test`.
-They cover initial/repeated migration, persisted preferences and statuses,
-case-insensitive code lookup, lazy participant relationships, MySQL constraints,
-database cascade deletion and identity methods with Hibernate proxies.
+Spin up the full platform locally (Nginx Gateway, React Frontend, Spring Boot Backend, and MySQL 8.0) via the `infra` repository — no external TMDB API key required (`TITLE_SOURCE=stub` is enabled by default):
 
-## Swagger and frontend API
+```bash
+git clone https://github.com/mate-team-project-262/infra.git && cd infra/compose
+cp .env.example .env
+docker compose up -d
+```
 
-After starting the backend, open [Swagger UI](http://localhost:8080/swagger-ui/index.html).
-The generated contracts are available as [OpenAPI JSON](http://localhost:8080/v3/api-docs)
-and [OpenAPI YAML](http://localhost:8080/v3/api-docs.yaml).
+* **Local App:** `http://localhost` · **Swagger UI:** `http://localhost/swagger-ui/index.html` · **Gateway Health:** `http://localhost/gateway-health`
 
-All three Sprint 1 operations include English descriptions, request/response
-examples, DTO constraints and operation-specific HTTP errors. For GET lobby,
-click **Authorize** and paste the participant token without `Bearer`.
-Create and join do not require authorization. Their token fields differ:
-`participant.token` for create, `currentParticipant.token` for join.
+---
 
-See [the frontend guide and error table](docs/frontend-api.md) for the complete
-create/join/lobby workflow and handling of business versus HTTP/JSON errors.
-Run `mvn -Dtest=RoomOpenApiIntegrationTest test` to verify generated documentation,
-Swagger UI and the real HTTP workflow against MySQL.
+<!-- =========================================================================
+     SECTION 2: BACKEND REPOSITORY DETAILS
+     ========================================================================= -->
 
-## Room creation and lobby
+## ⚙️ Backend Repository Details
 
-`POST /rooms` accepts the existing `CreateRoomRequest`: `displayName` (3–20
-characters, not blank) and optional `preferences`. It returns `201 Created`, a
-`Location: /rooms/{code}` header and `CreateRoomResponse`. The host and its token
-remain in the `participant` field. Missing or null preferences retain the model's
-`MOVIES` default, empty genres and no duration limit. A supplied preferences
-object requires `contentType`; missing or null `genreIds` become an empty set.
-`maxDurationMinutes` accepts any integer from 30 through 150, or null.
+The REST API powering W2W: rooms, swipe voting, match results, user accounts, and analytics. In production, the frontend communicates with the API through the Nginx gateway under `/api`.
 
-Room creation, host persistence and token issuance commit together. Only a room
-code unique constraint violation triggers a retry, with a fresh transaction for
-each of at most five attempts. Exhaustion returns `503 Service Unavailable` so the
-caller can retry; other persistence failures propagate without collision retries.
+### Features
 
-`GET /rooms/{code}` requires `X-Participant-Token` for a participant in that room.
-It returns `RoomDetailsResponse` with current status, preferences, participant
-count, configured `maxParticipants` and participants ordered by ID. The shared
-participant list contains only ID, display name and host flag. Tokens are never
-included. The temporary limit is **5**, configurable with `ROOM_MAX_PARTICIPANTS`
-(`room.max-participants`). The current join implementation checks a fixed limit of 5;
-changing that configuration alone does not change join capacity.
+- **Guest Rooms:** Support for up to 5 participants per room (default, configurable via `ROOM_MAX_PARTICIPANTS`), joined via a room code using a 24-hour participant token.
+- **Curated Movie Decks:** 20 movies or series per game fetched from TMDB, served in the exact same order to all participants. Includes an offline stub mode that works without a TMDB API key.
+- **Safe Game Start:** Restricted exclusively to the room host, with built-in safeguards preventing double-clicks or TMDB errors from corrupting the room state.
+- **Swipe Voting & Match Engine:** Real-time group progress tracking and result calculation with tie-breaking and "no match" handling.
+- **User Accounts:** Sign up and sign in by display name using CSRF-protected session cookies. Users can update their name, email, and password, as well as link a guest session to their account.
+- **Session History & "Movie Identity":** Tracks favorite and least-liked genres, decades, and actors. Finished games are archived so history persists even after a room is deleted.
+- **Privacy-Friendly Analytics:** Single `POST /event` endpoint (plus server-side event logging) that stores anonymized metrics for 400 days—no names, emails, or room codes are retained.
+- **Standardized Error Handling:** Consistent error response structure (`code`, `message`, `fieldErrors`) across all endpoints, fully documented in Swagger.
 
-Validation failures return `400`; missing, unknown or expired tokens return
-`401 INVALID_TOKEN`; a valid token belonging to another room returns
-`403 WRONG_ROOM`; an unknown room with a valid token returns `404 ROOM_NOT_FOUND`.
-`ForbiddenException` now maps to `403` instead of the previous incorrect `401`.
-`POST /rooms/{code}/join` creates a participant with `host=false` and returns
-`201` with `currentParticipant.token`. It requires a room in `LOBBY`, fewer than
-5 current participants, and a free display name (case-insensitive). Conflicts
-return `409 ROOM_NOT_JOINABLE`, `ROOM_FULL`, or `NAME_TAKEN`. Joining does not
-restore an earlier participant session. Random film selection remains outside Sprint 1.
+### Tech Stack
 
-DTO PRs #11/#13 and token resolver/service PR #12 are already merged into the
-`develop` base (`ed7fe66`); there are no remaining dependencies on those PRs.
+- **Backend:** Java 21, Spring Boot 3.5 (Web, Security, Validation, Data JPA)
+- **Database:** MySQL 8.0, Liquibase
+- **Documentation:** SpringDoc OpenAPI, Swagger UI
+- **Build & Tooling:** Maven, Lombok, MapStruct
+- **Testing:** JUnit 5, Mockito, MockMvc, Testcontainers, H2
+- **External APIs:** TMDB API
 
-Run the API, transaction and authorization checks on MySQL with
-`mvn -Dtest=RoomControllerIntegrationTest test` (Docker required).
-Run the service checks without Docker with `mvn -Dtest=RoomServiceTest test`.
-The standalone HTTP checks run with `mvn -Dtest=RoomControllerTest test` and cover
-the existing DTO contract, request validation and participant token resolution.
+### Quick Start (Backend Only)
 
-`RoomMapper` uses MapStruct 1.6.3 with the Spring component model. Maven generates
-its implementation during compilation; generated sources stay under `target/`.
-The annotation processor configuration includes Lombok and `lombok-mapstruct-binding`.
-Room construction retains model defaults, and response genres and participant
-lists remain immutable snapshots. Mapper regression tests run with
-`mvn -Dtest=RoomMapperTest test`.
+Requires **Java 21** and a running **MySQL** instance with an empty database (`CREATE DATABASE moviematch;`).
 
-## Sprint 1 data model
+```bash
+export MYSQL_DATABASE=moviematch MYSQL_USER=root MYSQL_PASSWORD=secret
+mvn spring-boot:run    # Runs on http://localhost:8080; Liquibase creates the schema automatically
+```
 
-The initial schema is in `001-rooms-participants.yaml`, included from the master
-changelog. IDs are Java `Long` values stored as MySQL `BIGINT AUTO_INCREMENT`.
-MySQL generates the IDs; JPA uses `GenerationType.IDENTITY`. Room foreign keys
-also use `BIGINT`.
+By default the app uses the offline stub, so you do not need a TMDB key.
+Real movies: set `TITLE_SOURCE=tmdb` and `TMDB_API_KEY` (the TMDB "API Read Access Token").
 
-| Table | Fields and constraints |
-| --- | --- |
-| `rooms` | `id` PK; `code` unique, required, six characters; `status` required, default `LOBBY`; `content_type` required, default `MOVIES`; nullable `max_duration_minutes`; required `created_at` with a current-time default |
-| `participants` | `id` PK; required `room_id` FK; required `name` (up to 20 characters); required `is_host`, default `false` |
-| `room_genres` | Required `room_id` FK and numeric external-catalog `genre_id`; composite PK `(room_id, genre_id)` prevents duplicates within a room |
+API docs: `http://localhost:8080/swagger-ui/index.html` (JSON: `/v3/api-docs`).
+Health: `/actuator/health`.
 
-Room statuses are `LOBBY`, `VOTING`, `FINISHED`. Content types are `MOVIES` and
-`TV_SERIES`. Both enums are stored as text and checked by MySQL. A null duration
-and an empty genre set mean no restriction. Genre IDs are external identifiers,
-so they do not reference a local `genres` table.
+Before a PR run `mvn test`. Room tests use Testcontainers, so Docker must be running;
+account tests use H2.
 
-Room codes use letters and digits excluding `O`, `0`, `I`, `L`, `1`. `Room`
-normalizes codes with `Locale.ROOT`; `findByCode` accepts either case. The database
-also enforces case-insensitive uniqueness using an ASCII case-insensitive
-collation. The code's unique index supports lookup; `created_at` is indexed for
-future expiry cleanup. `participants.room_id` is indexed; the genre composite PK
-already indexes `room_id`.
+### Settings (environment variables)
 
-Participants are guests belonging to one room. Different guests can have the same
-name. Account links (`user_id`) are deferred until a later migration introduces
-users. Room creation assigns the creator as host. The future join service must
-identify returning guests using a validated participant token and preserve the
-single host. This schema stores the host flag without enforcing host count.
-Entity IDs and invitation codes alone do not implement authentication.
+| Variable | Default | Meaning |
+|---|---|---|
+| `MYSQL_HOST`, `MYSQL_PORT` | `localhost`, `3306` | database address |
+| `MYSQL_DATABASE`, `MYSQL_USER`, `MYSQL_PASSWORD` | – (required) | database name and login |
+| `TITLE_SOURCE` | `stub` | `stub` (offline) or `tmdb` |
+| `TMDB_API_KEY` | – | needed when `TITLE_SOURCE=tmdb` |
+| `FRONTEND_ORIGINS` | `http://localhost:5173` | allowed browser origins (CORS), comma separated |
+| `SESSION_COOKIE_SECURE` | `false` | set `true` when the site runs on HTTPS |
+| `ROOM_MAX_PARTICIPANTS` | `5` | people per room |
 
-Deleting a room cascades to its participants and genres in MySQL, including when
-deleted using SQL. No JPA entity cascade or orphan removal is configured.
-The five-person room limit enforcement and scheduled 24-hour cleanup belong to
-later service tasks. Streaming services, accounts and swipe history are outside
-this migration.
+### Project layout
 
-## Sprint 2 title catalog and room decks (S2-2)
+`controller` (HTTP) → `service` (rules, transactions) → `repository` (database), with `model` (entities),
+`dto` (requests and responses), `mapper`, `config`, `security`, `exception` and `source` (TMDB and stub).
+Database changes live in `src/main/resources/db/changelog` (Liquibase, one file per change).
 
-Migration `003-titles-room-deck.yaml` adds the shared `titles` catalog and
-`room_titles`. `Title` stores all card details; unavailable catalog details are
-nullable. Rooms, source models and titles share `ContentType.MOVIES` and
-`ContentType.TV_SERIES`. Migration 006 converts legacy title values without
-changing title IDs or room-deck links. Money uses `Long`/`BIGINT`;
-popularity and vote average use decimal values. `createdAt` uses a UTC instant.
+### More
 
-`title_genres` stores genre ID/name snapshots as a set; the ID remains unique
-within each title. Migration 005 backfills known legacy IDs with English names
-and retains unknown IDs with a null name. New names come from TMDB details.
-Room preferences continue to store genre IDs only. `title_creators` and
-`title_cast` store names as ordered lists, including repeated names. Collections
-are lazy and should be read inside a transaction when assembling card details.
+- [Swagger UI](http://localhost:8080/swagger-ui/index.html) — every endpoint, with examples of requests and errors
+- [docs/docker-and-deployment.md](docs/docker-and-deployment.md) — Docker image, CI/CD, infra repo
+- [CONTRIBUTING.md](CONTRIBUTING.md) — Git flow and pull requests
+- `src/main/resources/db/changelog/` — the database history
 
-Before adding a card, look up its shared title with
-`TitleRepository.findByTmdbIdAndMediaType(tmdbId, mediaType)` and reuse it if
-present. The database unique key on `(tmdb_id, media_type)` prevents duplicates,
-including concurrent inserts. If two transactions create the same catalog entry,
-the caller must retry the lookup in a new transaction after the losing insert
-rolls back. Saving a new `Title` does not automatically perform an upsert.
-
-Save `RoomTitle` entries with positions from 0 through 19. Database constraints
-reject duplicate positions or titles within one room. Read the stored order with
-`RoomTitleRepository.findAllByRoomIdOrderByPositionAsc(roomId)`; it fetches each
-entry's title together with the deck. Sharing a title across rooms does not copy
-the catalog row. Deleting a room removes its deck and retains shared titles;
-deleting a referenced title is blocked. Deleting an unreferenced title removes
-its genre, creator and cast collections.
-
-This task provides persistence and repositories. Deck generation, TMDB fetching,
-HTTP endpoints and API DTOs belong to their respective tasks. Consumers should
-save a complete deck in one transaction and reload it for every participant.
-Run `mvn -Dtest=TitlePersistenceTests,RoomPersistenceTests test` with Docker to
-verify migrations, complete details, reads after commit in independent
-transactions, shared title reuse, ordering and MySQL constraints.
-
-## Sprint 2 card sources and TMDB (S2-1)
-
-`TitleSource` provides `discover(contentType, filters, page)` and
-`getDetails(contentType, tmdbId)` for movies and TV series. The default
-`TITLE_SOURCE=stub` supplies 24 fictional cards per content type with full
-details and local demo posters, without a TMDB key or network access.
-
-For live data set `TITLE_SOURCE=tmdb` and `TMDB_API_KEY` to a TMDB API Read Access
-Token (without the Bearer prefix). Connection/read timeouts default to 3s/5s.
-Missing catalog values stay null, missing lists stay empty, and upstream errors
-map to `502 TMDB_UNAVAILABLE`. The selected source never silently falls back.
-
-See [source configuration, field mapping and tests](docs/title-sources.md).
-These are internal source models; no new public API DTOs or deck endpoints are added.
-
-Never commit `.env` files or real credentials. `.env.example` contains placeholders only.
-
-## Random room deck preparation
-
-`RoomDeckService` samples TMDB pages, validates 20 cards and stores their details
-and room order in one `@Transactional` operation using JPA `saveAll()`.
-Repeated requests reuse the saved deck. Calls run sequentially on the caller
-thread, with request budgets and bounded HTTP bodies.
-The service is internal; room-start HTTP integration is a separate step.
-See [algorithm, limits, concurrency and verification](docs/room-decks.md).
-
-## Saved deck and swipes (S2-5, S2-6)
-
-`GET /rooms/{code}/deck` returns the stored deck, More details and personal votes.
-`POST /rooms/{code}/votes` saves a like or skip and returns personal progress.
-Both require `X-Participant-Token` and never call TMDB. Repeating the same choice
-succeeds; changing a saved choice returns `409 ALREADY_VOTED`.
-# Password reset
-
-Configure SMTP and the frontend reset page URL with the MAIL_* and FRONTEND_URL
-variables documented in .env.example. In production FRONTEND_URL must be the
-public HTTPS frontend origin. The backend emails a 20-minute one-time link to
-`/reset-password?token=...`. The frontend calls GET /auth/reset-password/check,
-then POST /auth/reset-password with the token and new password. POST endpoints
-need the cookie and X-CSRF-TOKEN from GET /auth/csrf; account sign-in is not
-required. A successful reset revokes account sessions. Do not log query strings
-for the check endpoint at the reverse proxy.
